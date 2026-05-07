@@ -25,11 +25,11 @@ const searchAlbums = async (req, res) => {
 
     const albums = await AlbumFacade.searchAlbums(query);
 
-    res.status(200).json(albums);
+    res.status(200).json({ status: "success", data: albums });
   } catch (error) {
     Logger.error("Search albums error", error);
 
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: "error", message: error.message });
   }
 };
 
@@ -39,11 +39,11 @@ const getAlbumById = async (req, res) => {
 
     const album = await AlbumFacade.getAlbumById(albumId);
 
-    res.status(200).json(album);
+    res.status(200).json({ status: "success", data: albums });
   } catch (error) {
     Logger.error("Get album by ID error", error);
 
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: "error", message: error.message });
   }
 };
 
@@ -53,11 +53,11 @@ const getAllAlbums = async (req, res) => {
 
     const albums = await AlbumFacade.getAllAlbums(parseInt(limit), parseInt(skip));
 
-    res.status(200).json(albums);
+    res.status(200).json({ status: "success", data: albums });
   } catch (error) {
     Logger.error("Get all albums error", error);
 
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: "error", message: error.message });
   }
 };
 
@@ -67,11 +67,11 @@ const createAlbum = async (req, res) => {
 
     const album = await AlbumFacade.createAlbum(albumData);
 
-    res.status(201).json(album);
+    res.status(201).json({ status: "success", data: albums });
   } catch (error) {
     Logger.error("Create album error", error);
 
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: "error", message: error.message });
   }
 };
 
