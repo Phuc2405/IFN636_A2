@@ -9,81 +9,155 @@ const generateToken = (id) => {
 
 // REGISTER
 const registerUser = async (req, res) => {
-  if (req.user) {
-    return res.status(400).json({ message: "Already logged in" });
-  }
-
-  const { nickname, email, password, confirmPassword, type } = req.body;
-
+  const { nickname, email, password, confirmPassword } = req.body;
+  const missing = [];
+  if (!nickname) missing.push("nickname");
+  if (!email) missing.push("email");
+  if (!password) missing.push("password");
+  if (!confirmPassword) missing.push("confirmPassword");
   try {
-    if (!nickname || !email || !password || !confirmPassword || !type) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (missing.length > 0) {
+      return res.status(400).json({
+        ResponseCode: "400",
+        Description: `Missing required fields`,
+        Status: "Failed",
+        MissingFields: missing.map((field) => ({
+          ErrorField: field,
+          ErrorMessage: `${field} is required`,
+        })),
+      });
     }
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(402).json({
+        ResponseCode: "402",
+        Description: "Invalid email format",
+        Status: "Failed",
+      });
+    }
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
+      return res.status(405).json({
+        ResponseCode: "405",
+        Description: "Passwords mismatch",
+        Status: "Failed",
+      });
     }
-
+    const authHeader = req.headers?.authorization;
+    if (authHeader) {
+      return res.status(409).json({
+        ResponseCode: "409",
+        Description: "User has already logged in",
+        Status: "Failed",
+      });
+    }
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(406).json({
+        ResponseCode: "406",
+        Description: "Email already exists",
+        Status: "Failed",
+      });
     }
 
     const user = await User.create({
       nickname,
       email,
       password,
-      type,
+      type: "user",
     });
 
-    res.status(201).json({
-      _id: user._id,
-      nickname: user.nickname,
-      email: user.email,
-      type: user.type,
-      token: generateToken(user.id),
+    return res.status(201).json({
+      ResponseCode: "201",
+      Description: "Created successfully",
+      Status: "Success",
+      Data: {
+        nickname: user.nickname,
+        email: user.email,
+        type: user.type,
+        token: generateToken(user.id),
+      },
     });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    res.status(500).json({ message: error.message });
+    console.error("Register error:", error);
+    res.status(500).json({
+      ResponseCode: "500",
+      Description: "Internal server error",
+      Status: "Failed",
+    });
   }
 };
 
 // LOGIN
 const loginUser = async (req, res) => {
-  if (req.user) {
-    return res.status(400).json({ message: "Already logged in" });
-  }
-
   const { email, password } = req.body;
-
   try {
     // Check missing fields
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+    const missing = [];
+    if (!email) missing.push("email");
+    if (!password) missing.push("password");
+    if (missing.length > 0) {
+      return res.status(400).json({
+        ResponseCode: "400",
+        Description: `Missing required fields`,
+        Status: "Failed",
+        MissingFields: missing.map((field) => ({
+          ErrorField: field,
+          ErrorMessage: `${field} is required`,
+        })),
+      });
     }
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(402).json({
+        ResponseCode: "402",
+        Description: "Invalid email format",
+        Status: "Failed",
+      });
+    }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        ResponseCode: "401",
+        Description: "Invalid email or password",
+        Status: "Failed",
+      });
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({
+        ResponseCode: "401",
+        Description: "Invalid email or password",
+        Status: "Failed",
+      });
+    }
+    const authHeader = req.headers?.authorization;
+    if (authHeader) {
+      return res.status(409).json({
+        ResponseCode: "409",
+        Description: "User has already logged in",
+        Status: "Failed",
+      });
     }
 
     res.json({
-      _id: user._id,
-      nickname: user.nickname,
-      email: user.email,
-      type: user.type,
-      token: generateToken(user.id),
+      ResponseCode: "200",
+      Description: "Successful",
+      Status: "Success",
+      Data: {
+        nickname: user.nickname,
+        email: user.email,
+        type: user.type,
+        token: generateToken(user.id),
+      },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Login error:", error);
+    res.status(500).json({
+      ResponseCode: "500",
+      Description: "Internal server error",
+      Status: "Failed",
+    });
   }
 };
 

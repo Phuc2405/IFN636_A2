@@ -29,7 +29,6 @@ describe("Login Function Test", () => {
     };
 
     sinon.stub(User, "findOne").resolves({
-      _id: mockUserId,
       nickname: "testuser",
       email: "testuser@example.com",
       password: "hashedpassword",
@@ -44,11 +43,30 @@ describe("Login Function Test", () => {
     await authController.loginUser(req, res);
 
     expect(res.json.calledOnce).to.be.true;
-    expect(res.json.firstCall.args[0]).to.include({
-      _id: mockUserId,
+    expect(res.json.firstCall.args[0].Data).to.include({
       nickname: "testuser",
       email: "testuser@example.com",
     });
+  });
+
+  it("should return 400 if required fields are missing", async () => {
+    const req = {
+      body: {
+        email: "", // missing email
+        password: "123456",
+      },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await authController.loginUser(req, res);
+
+    expect(res.status.calledWith(400)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Missing required fields" }))
+      .to.be.true;
   });
 
   it("should return 401 for incorrect username or password", async () => {
@@ -74,15 +92,60 @@ describe("Login Function Test", () => {
     await authController.loginUser(req, res);
 
     expect(res.status.calledWith(401)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Invalid email or password" }))
-      .to.be.true;
+    expect(
+      res.json.calledWithMatch({ Description: "Invalid email or password" }),
+    ).to.be.true;
   });
 
-  it("should return 400 when login is called while already logged in", async () => {
+  it("should return 401 when email does not exist", async () => {
+    const req = {
+      body: { email: "notfound@example.com", password: "any" },
+    };
+
+    sinon.stub(User, "findOne").resolves(null);
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+    await authController.loginUser(req, res);
+
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(
+      res.json.calledWithMatch({ Description: "Invalid email or password" }),
+    ).to.be.true;
+  });
+
+  it("should return 402 for invalid email format", async () => {
+    const req = {
+      body: {
+        nickname: "newuser",
+        email: "invalid-email",
+        password: "123456",
+        confirmPassword: "123456",
+        type: "user",
+      },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await authController.registerUser(req, res);
+
+    expect(res.status.calledWith(402)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Invalid email format" })).to
+      .be.true;
+  });
+
+  it("should return 409 when login is called while already logged in", async () => {
     const mockUserId = new mongoose.Types.ObjectId();
 
     const req = {
-      user: { id: mockUserId, type: "user" },
+      headers: {
+        authorization: "Bearer token",
+      },
       body: { email: "testuser@example.com", password: "correctpassword" },
     };
 
@@ -93,9 +156,10 @@ describe("Login Function Test", () => {
 
     await authController.loginUser(req, res);
 
-    expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Already logged in" })).to.be
-      .true;
+    expect(res.status.calledWith(409)).to.be.true;
+    expect(
+      res.json.calledWithMatch({ Description: "User has already logged in" }),
+    ).to.be.true;
   });
 });
 
@@ -115,7 +179,6 @@ describe("Register Function Test", () => {
 
     sinon.stub(User, "findOne").resolves(null);
     sinon.stub(User, "create").resolves({
-      _id: mockNewUserId,
       nickname: "newuser",
       email: "newuser@example.com",
       type: "user",
@@ -130,15 +193,83 @@ describe("Register Function Test", () => {
 
     expect(res.status.calledWith(201)).to.be.true;
     expect(res.json.calledOnce).to.be.true;
-    expect(res.json.firstCall.args[0]).to.include({
-      _id: mockNewUserId,
+    expect(res.json.firstCall.args[0].Data).to.include({
       nickname: "newuser",
       email: "newuser@example.com",
       type: "user",
     });
   });
 
-  it("should return 400 if email already exists", async () => {
+  it("should return 400 if required fields are missing", async () => {
+    const req = {
+      body: {
+        nickname: "newuser",
+        email: "", // missing email
+        password: "123456",
+        confirmPassword: "123456",
+        type: "user",
+      },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await authController.registerUser(req, res);
+
+    expect(res.status.calledWith(400)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Missing required fields" }))
+      .to.be.true;
+  });
+
+  it("should return 402 for invalid email format", async () => {
+    const req = {
+      body: {
+        nickname: "newuser",
+        email: "invalid-email",
+        password: "123456",
+        confirmPassword: "123456",
+        type: "user",
+      },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await authController.registerUser(req, res);
+
+    expect(res.status.calledWith(402)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Invalid email format" })).to
+      .be.true;
+  });
+
+  it("should return 405 if passwords mismatch", async () => {
+    const req = {
+      body: {
+        nickname: "newuser",
+        email: "newuser@example.com",
+        password: "123456",
+        confirmPassword: "654321",
+        type: "user",
+      },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await authController.registerUser(req, res);
+
+    expect(res.status.calledWith(405)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Passwords mismatch" })).to
+      .be.true;
+  });
+
+  it("should return 406 if email already exists", async () => {
     const req = {
       body: {
         nickname: "existinguser",
@@ -158,16 +289,18 @@ describe("Register Function Test", () => {
 
     await authController.registerUser(req, res);
 
-    expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Email already exists" })).to.be
-      .true;
+    expect(res.status.calledWith(406)).to.be.true;
+    expect(res.json.calledWithMatch({ Description: "Email already exists" })).to
+      .be.true;
   });
 
-  it("should return 400 when register is called while already logged in", async () => {
+  it("should return 409 when register is called while already logged in", async () => {
     const mockUserId = new mongoose.Types.ObjectId();
 
     const req = {
-      user: { id: mockUserId, type: "user" },
+      headers: {
+        authorization: "Bearer token",
+      },
       body: {
         nickname: "newuser",
         email: "newuser@example.com",
@@ -184,32 +317,10 @@ describe("Register Function Test", () => {
 
     await authController.registerUser(req, res);
 
-    expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Already logged in" })).to.be
-      .true;
-  });
-
-  it("should return 400 if passwords do not match", async () => {
-    const req = {
-      body: {
-        nickname: "newuser",
-        email: "newuser@example.com",
-        password: "123456",
-        confirmPassword: "654321",
-        type: "user",
-      },
-    };
-
-    const res = {
-      status: sinon.stub().returnsThis(),
-      json: sinon.spy(),
-    };
-
-    await authController.registerUser(req, res);
-
-    expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Passwords do not match" })).to
-      .be.true;
+    expect(res.status.calledWith(409)).to.be.true;
+    expect(
+      res.json.calledWithMatch({ Description: "User has already logged in" }),
+    ).to.be.true;
   });
 });
 
@@ -663,5 +774,3 @@ describe("Admin Delete Review Function Test", () => {
       .true;
   });
 });
-
-
