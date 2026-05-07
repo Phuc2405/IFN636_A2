@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import Reviews from "./pages/Reviews";
 import AdminPanel from "./pages/AdminPanel";
+import Home from "./pages/Home";
 import RedirectIfLoggedIn from "./components/RedirectIfLoggedIn";
 
 function App() {
@@ -18,6 +19,10 @@ function App() {
           <Routes>
             <Route
               path="/"
+              element={<Home />}
+            />
+            <Route
+              path="/reviews"
               element={
                 <ProtectedRoute>
                   <Reviews />
