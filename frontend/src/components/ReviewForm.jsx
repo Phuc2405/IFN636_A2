@@ -91,7 +91,9 @@ const ReviewForm = ({
       } else {
         const response = await axiosInstance.post(
           "/api/reviews",
-          { ...formData, albumID: selectedAlbum._id },
+          { ...formData, albumTitle: selectedAlbum.title,
+            artistName: selectedAlbum.artist,
+           },
           config,
         );
         setReviews([response.data, ...reviews]);
