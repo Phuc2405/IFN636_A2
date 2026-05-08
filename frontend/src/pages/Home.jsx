@@ -23,11 +23,7 @@ const Home = () => {
         setAlbums(response.data.data ?? []);
         setSearched(true);
       } catch (error) {
-        const message =
-          error.response?.data?.message ||
-          error.response?.statusText ||
-          error.message ||
-          "Search failed. Please try again.";
+        const message = error || error.response?.data?.description || error.message || "Search failed. Please try again.";
         alert(message);
         return;
       }
