@@ -14,7 +14,10 @@ const Navbar = () => {
   return (
     <nav className="bg-[#0a0a0a] text-white p-4 flex justify-between items-center gap-4 border-b border-gray-800 sticky top-0 z-50">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-3 group">
+      <Link
+        to="/"
+        className="flex items-center gap-3 group"
+      >
         <span className="text-xl font-bold hidden sm:block tracking-wide group-hover:text-orange-500 transition-colors">
           Felix Music
         </span>
@@ -30,6 +33,14 @@ const Navbar = () => {
                 className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-500 hover:text-white transition-all active:scale-95"
               >
                 Admin Panel
+              </Link>
+            )}
+            {user?.type === "user" && (
+              <Link
+                to="/reviews"
+                className="bg-green-500/10 text-green-400 border border-green-500/20 px-6 py-2.5 rounded-xl font-bold hover:bg-green-500 hover:text-white transition-all active:scale-95"
+              >
+                My Reviews
               </Link>
             )}
 

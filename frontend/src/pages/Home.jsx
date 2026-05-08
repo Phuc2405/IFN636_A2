@@ -107,10 +107,18 @@ const Home = () => {
                         alt={`${album.title} cover`}
                         className="w-16 h-16 object-cover rounded mr-4 float-left"
                       />
-                      <div className="flex flex-col justify-center">
+                      <div className="flex flex-col flex-1 justify-center">
                         <h3 className="text-lg font-bold">{album.title}</h3>
                         <p className="text-gray-400">{album.artist}</p>
                         <p className="text-gray-400 text-sm">{album.releaseYear}</p>
+                      </div>
+                      <div>
+                        <Link
+                          to={"/reviews"}
+                          className="ml-auto bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm"
+                        >
+                          Write Review
+                        </Link>
                       </div>
                     </li>
                   ))
