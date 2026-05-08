@@ -18,44 +18,51 @@ const registerUser = async (req, res) => {
   try {
     if (missing.length > 0) {
       return res.status(400).json({
-        ResponseCode: "400",
-        Description: `Missing required fields`,
-        Status: "Failed",
-        MissingFields: missing.map((field) => ({
-          ErrorField: field,
-          ErrorMessage: `${field} is required`,
+        responseCode: "400",
+        description: `Missing required fields`,
+        status: "Failed",
+        missingFields: missing.map((field) => ({
+          errorField: field,
+          errorMessage: `${field} is required`,
         })),
       });
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(402).json({
-        ResponseCode: "402",
-        Description: "Invalid email format",
-        Status: "Failed",
+        responseCode: "402",
+        description: "Invalid email format",
+        status: "Failed",
       });
     }
     if (password !== confirmPassword) {
       return res.status(405).json({
-        ResponseCode: "405",
-        Description: "Passwords mismatch",
-        Status: "Failed",
+        responseCode: "405",
+        description: "Passwords mismatch",
+        status: "Failed",
       });
     }
     const authHeader = req.headers?.authorization;
-    if (authHeader) {
-      return res.status(409).json({
-        ResponseCode: "409",
-        Description: "User has already logged in",
-        Status: "Failed",
-      });
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "defaultsecret",
+        );
+        return res.status(409).json({
+          responseCode: "409",
+          description: "User has already logged in",
+          status: "Failed",
+        });
+      } catch (err) {}
     }
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(406).json({
-        ResponseCode: "406",
-        Description: "Email already exists",
-        Status: "Failed",
+        responseCode: "406",
+        description: "Email already exists",
+        status: "Failed",
       });
     }
 
@@ -67,10 +74,10 @@ const registerUser = async (req, res) => {
     });
 
     return res.status(201).json({
-      ResponseCode: "201",
-      Description: "Created successfully",
-      Status: "Success",
-      Data: {
+      responseCode: "201",
+      description: "Created successfully",
+      status: "Success",
+      data: {
         nickname: user.nickname,
         email: user.email,
         type: user.type,
@@ -80,15 +87,32 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({
-      ResponseCode: "500",
-      Description: "Internal server error",
-      Status: "Failed",
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
     });
   }
 };
 
 // LOGIN
 const loginUser = async (req, res) => {
+  const authHeader = req.headers?.authorization;
+  const secret = process.env.JWT_SECRET || "defaultsecret";
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      jwt.verify(token, secret);
+
+      return res.status(409).json({
+        responseCode: "409",
+        description: "User has already logged in",
+        status: "Failed",
+      });
+    } catch (err) {
+      // Token verification failed - continue with normal login flow
+    }
+  }
   const { email, password } = req.body;
   try {
     // Check missing fields
@@ -97,54 +121,46 @@ const loginUser = async (req, res) => {
     if (!password) missing.push("password");
     if (missing.length > 0) {
       return res.status(400).json({
-        ResponseCode: "400",
-        Description: `Missing required fields`,
-        Status: "Failed",
-        MissingFields: missing.map((field) => ({
-          ErrorField: field,
-          ErrorMessage: `${field} is required`,
+        responseCode: "400",
+        description: `Missing required fields`,
+        status: "Failed",
+        missingFields: missing.map((field) => ({
+          errorField: field,
+          errorMessage: `${field} is required`,
         })),
       });
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(402).json({
-        ResponseCode: "402",
-        Description: "Invalid email format",
-        Status: "Failed",
+        responseCode: "402",
+        description: "Invalid email format",
+        status: "Failed",
       });
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        ResponseCode: "401",
-        Description: "Invalid email or password",
-        Status: "Failed",
+      return res.status(407).json({
+        responseCode: "407",
+        description: "Invalid email or password",
+        status: "Failed",
       });
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(401).json({
-        ResponseCode: "401",
-        Description: "Invalid email or password",
-        Status: "Failed",
-      });
-    }
-    const authHeader = req.headers?.authorization;
-    if (authHeader) {
-      return res.status(409).json({
-        ResponseCode: "409",
-        Description: "User has already logged in",
-        Status: "Failed",
+      return res.status(407).json({
+        responseCode: "407",
+        description: "Invalid email or password",
+        status: "Failed",
       });
     }
 
     res.json({
-      ResponseCode: "200",
-      Description: "Successful",
-      Status: "Success",
-      Data: {
+      responseCode: "200",
+      description: "Successful",
+      status: "Success",
+      data: {
         nickname: user.nickname,
         email: user.email,
         type: user.type,
@@ -154,11 +170,24 @@ const loginUser = async (req, res) => {
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({
-      ResponseCode: "500",
-      Description: "Internal server error",
-      Status: "Failed",
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
     });
   }
 };
+const getUserInfo = async (req, res) => {
+  return res.json({
+    responseCode: "200",
+    description: "User profile",
+    status: "Success",
+    data: {
+      id: req.user._id,
+      nickname: req.user.nickname,
+      email: req.user.email,
+      type: req.user.type,
+    },
+  });
+};
 
-module.exports = { registerUser, loginUser };
+module.exports = { registerUser, loginUser, getUserInfo };

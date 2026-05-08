@@ -1,9 +1,12 @@
 const chai = require("chai");
 const chaiHttp = require("chai-http");
+chai.use(chaiHttp);
+const { expect } = chai;
 const mongoose = require("mongoose");
+const app = require("../server");
 const sinon = require("sinon");
 const bcrypt = require("bcrypt");
-const { expect } = chai;
+const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 const Album = require("../models/Album");
@@ -13,8 +16,6 @@ const authController = require("../controllers/authController");
 const reviewController = require("../controllers/reviewController");
 const adminController = require("../controllers/adminController");
 const admin = require("../middleware/adminMiddleware");
-
-chai.use(chaiHttp);
 
 afterEach(() => {
   sinon.restore();
@@ -43,7 +44,7 @@ describe("Login Function Test", () => {
     await authController.loginUser(req, res);
 
     expect(res.json.calledOnce).to.be.true;
-    expect(res.json.firstCall.args[0].Data).to.include({
+    expect(res.json.firstCall.args[0].data).to.include({
       nickname: "testuser",
       email: "testuser@example.com",
     });
@@ -65,55 +66,8 @@ describe("Login Function Test", () => {
     await authController.loginUser(req, res);
 
     expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Missing required fields" }))
+    expect(res.json.calledWithMatch({ description: "Missing required fields" }))
       .to.be.true;
-  });
-
-  it("should return 401 for incorrect username or password", async () => {
-    const mockUserId = new mongoose.Types.ObjectId();
-
-    const req = {
-      body: { email: "testuser@example.com", password: "wrongpassword" },
-    };
-
-    sinon.stub(User, "findOne").resolves({
-      _id: mockUserId,
-      nickname: "testuser",
-      email: "testuser@example.com",
-      password: "hashedpassword",
-    });
-    sinon.stub(bcrypt, "compare").resolves(false);
-
-    const res = {
-      status: sinon.stub().returnsThis(),
-      json: sinon.spy(),
-    };
-
-    await authController.loginUser(req, res);
-
-    expect(res.status.calledWith(401)).to.be.true;
-    expect(
-      res.json.calledWithMatch({ Description: "Invalid email or password" }),
-    ).to.be.true;
-  });
-
-  it("should return 401 when email does not exist", async () => {
-    const req = {
-      body: { email: "notfound@example.com", password: "any" },
-    };
-
-    sinon.stub(User, "findOne").resolves(null);
-
-    const res = {
-      status: sinon.stub().returnsThis(),
-      json: sinon.spy(),
-    };
-    await authController.loginUser(req, res);
-
-    expect(res.status.calledWith(401)).to.be.true;
-    expect(
-      res.json.calledWithMatch({ Description: "Invalid email or password" }),
-    ).to.be.true;
   });
 
   it("should return 402 for invalid email format", async () => {
@@ -135,19 +89,24 @@ describe("Login Function Test", () => {
     await authController.registerUser(req, res);
 
     expect(res.status.calledWith(402)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Invalid email format" })).to
+    expect(res.json.calledWithMatch({ description: "Invalid email format" })).to
       .be.true;
   });
 
-  it("should return 409 when login is called while already logged in", async () => {
+  it("should return 407 for incorrect username or password", async () => {
     const mockUserId = new mongoose.Types.ObjectId();
 
     const req = {
-      headers: {
-        authorization: "Bearer token",
-      },
-      body: { email: "testuser@example.com", password: "correctpassword" },
+      body: { email: "testuser@example.com", password: "wrongpassword" },
     };
+
+    sinon.stub(User, "findOne").resolves({
+      _id: mockUserId,
+      nickname: "testuser",
+      email: "testuser@example.com",
+      password: "hashedpassword",
+    });
+    sinon.stub(bcrypt, "compare").resolves(false);
 
     const res = {
       status: sinon.stub().returnsThis(),
@@ -156,10 +115,64 @@ describe("Login Function Test", () => {
 
     await authController.loginUser(req, res);
 
-    expect(res.status.calledWith(409)).to.be.true;
+    expect(res.status.calledWith(407)).to.be.true;
     expect(
-      res.json.calledWithMatch({ Description: "User has already logged in" }),
+      res.json.calledWithMatch({ description: "Invalid email or password" }),
     ).to.be.true;
+  });
+
+  it("should return 407 when email does not exist", async () => {
+    const req = {
+      body: { email: "notfound@example.com", password: "any" },
+    };
+
+    sinon.stub(User, "findOne").resolves(null);
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+    await authController.loginUser(req, res);
+
+    expect(res.status.calledWith(407)).to.be.true;
+    expect(
+      res.json.calledWithMatch({ description: "Invalid email or password" }),
+    ).to.be.true;
+  });
+
+  it("should return 409 when login is called with a valid token", (done) => {
+    const secret = process.env.JWT_SECRET || "defaultsecret";
+    const validToken = jwt.sign({ id: "1234567890" }, secret);
+
+    chai
+      .request(app)
+      .post("/api/auth/login")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({
+        email: "test@example.com",
+        password: "123456",
+      })
+      .end((err, res) => {
+        expect(res).to.have.status(409);
+        done();
+      });
+  });
+
+  it("should NOT return 409 when login is called with an invalid token", (done) => {
+    sinon.stub(User, "findOne").resolves(null);
+
+    chai
+      .request(app)
+      .post("/api/auth/login")
+      .set("Authorization", "Bearer faketoken123")
+      .send({
+        email: "test@example.com",
+        password: "123456",
+      })
+      .end((err, res) => {
+        expect(res).to.not.have.status(409);
+        done();
+      });
   });
 });
 
@@ -193,7 +206,7 @@ describe("Register Function Test", () => {
 
     expect(res.status.calledWith(201)).to.be.true;
     expect(res.json.calledOnce).to.be.true;
-    expect(res.json.firstCall.args[0].Data).to.include({
+    expect(res.json.firstCall.args[0].data).to.include({
       nickname: "newuser",
       email: "newuser@example.com",
       type: "user",
@@ -219,7 +232,7 @@ describe("Register Function Test", () => {
     await authController.registerUser(req, res);
 
     expect(res.status.calledWith(400)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Missing required fields" }))
+    expect(res.json.calledWithMatch({ description: "Missing required fields" }))
       .to.be.true;
   });
 
@@ -242,7 +255,7 @@ describe("Register Function Test", () => {
     await authController.registerUser(req, res);
 
     expect(res.status.calledWith(402)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Invalid email format" })).to
+    expect(res.json.calledWithMatch({ description: "Invalid email format" })).to
       .be.true;
   });
 
@@ -265,7 +278,7 @@ describe("Register Function Test", () => {
     await authController.registerUser(req, res);
 
     expect(res.status.calledWith(405)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Passwords mismatch" })).to
+    expect(res.json.calledWithMatch({ description: "Passwords mismatch" })).to
       .be.true;
   });
 
@@ -290,16 +303,18 @@ describe("Register Function Test", () => {
     await authController.registerUser(req, res);
 
     expect(res.status.calledWith(406)).to.be.true;
-    expect(res.json.calledWithMatch({ Description: "Email already exists" })).to
+    expect(res.json.calledWithMatch({ description: "Email already exists" })).to
       .be.true;
   });
 
   it("should return 409 when register is called while already logged in", async () => {
     const mockUserId = new mongoose.Types.ObjectId();
+    const secret = process.env.JWT_SECRET || "defaultsecret";
+    const validToken = jwt.sign({ id: mockUserId }, secret);
 
     const req = {
       headers: {
-        authorization: "Bearer token",
+        authorization: `Bearer ${validToken}`,
       },
       body: {
         nickname: "newuser",
@@ -319,8 +334,25 @@ describe("Register Function Test", () => {
 
     expect(res.status.calledWith(409)).to.be.true;
     expect(
-      res.json.calledWithMatch({ Description: "User has already logged in" }),
+      res.json.calledWithMatch({ description: "User has already logged in" }),
     ).to.be.true;
+  });
+
+  it("should NOT return 409 when register is called with an invalid token", (done) => {
+    chai
+      .request(app)
+      .post("/api/auth/register")
+      .set("Authorization", "Bearer faketoken123")
+      .send({
+        nickname: "TestUser",
+        email: "newuser@example.com",
+        password: "123456",
+        type: "user",
+      })
+      .end((err, res) => {
+        expect(res).to.not.have.status(409);
+        done();
+      });
   });
 });
 

@@ -5,9 +5,9 @@ const Album = require("../models/Album");
 const getMyReviews = async (req, res) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "You must be logged in to view your reviews" });
+      return res.status(401).json({
+        message: "You must be logged in to view your reviews",
+      });
     }
 
     const reviews = await Review.find({ userID: req.user.id })
@@ -17,7 +17,11 @@ const getMyReviews = async (req, res) => {
 
     res.json(reviews);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
+    });
   }
 };
 
