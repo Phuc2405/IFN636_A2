@@ -77,24 +77,48 @@ const ReviewForm = ({
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
 
+      // Helper function to transform backend response to frontend format
+      const transformReview = (backendData, albumInfo) => ({
+        _id: backendData.reviewID,
+        albumID: albumInfo,
+        reviewRate: backendData.reviewRate,
+        reviewContent: backendData.reviewContent,
+        reviewDate: backendData.createdAt || backendData.reviewDate,
+        updateAt: backendData.updateAt,
+      });
+
       if (editingReview) {
         const response = await axiosInstance.put(
           `/api/reviews/${editingReview._id}`,
           formData,
           config,
         );
+        // Backend returns: { responseCode, description, status, data: {...} }
+        const transformedReview = transformReview(
+          response.data.data || response.data,
+          editingReview.albumID,
+        );
         setReviews(
           reviews.map((rev) =>
-            rev._id === response.data._id ? response.data : rev,
+            rev._id === transformedReview._id ? transformedReview : rev,
           ),
         );
       } else {
         const response = await axiosInstance.post(
           "/api/reviews",
-          { ...formData, albumID: selectedAlbum._id },
+          {
+            ...formData,
+            albumTitle: selectedAlbum.title,
+            artistName: selectedAlbum.artist,
+          },
           config,
         );
-        setReviews([response.data, ...reviews]);
+        // Backend returns: { responseCode, description, status, data: {...} }
+        const transformedReview = transformReview(
+          response.data.data || response.data,
+          selectedAlbum,
+        );
+        setReviews([transformedReview, ...reviews]);
       }
       handleReset();
     } catch (error) {

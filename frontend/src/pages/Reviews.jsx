@@ -14,6 +14,9 @@ const Reviews = () => {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
 
+  console.log("User from AuthContext:", user);
+  console.log("User token:", user?.token);
+
   // 1. Create a ref to anchor the form location for smooth scrolling
   const formSectionRef = useRef(null);
 
@@ -26,7 +29,14 @@ const Reviews = () => {
 
   // Fetch user's own reviews and sort them by newest first
   useEffect(() => {
-    if (!user?.token) return;
+    if (!user?.token) {
+      console.log("No token found, skipping fetch");
+      return;
+    }
+    console.log(
+      "Fetching reviews with token:",
+      user.token?.substring(0, 20) + "...",
+    );
     let isMounted = true;
 
     const fetchReviews = async () => {
@@ -36,15 +46,46 @@ const Reviews = () => {
         });
 
         if (isMounted) {
+          // Helper function to transform backend response to frontend format
+          const transformReview = (r) => ({
+            _id: r.reviewID,
+            albumID: {
+              title: r.albumTitle,
+              artist: r.artist,
+              coverImageUrl: r.coverImageUrl,
+            },
+            reviewRate: r.reviewRate,
+            reviewContent: r.reviewContent,
+            reviewDate: r.createdAt,
+            updateAt: r.updateAt,
+          });
+
+          // Backend returns: { responseCode, description, status, totalReviews, data: [...] }
+          // Extract data array and transform each review
+          console.log("Raw response:", response.data);
+          const reviewsData = Array.isArray(response.data)
+            ? response.data
+            : response.data?.data || [];
+          console.log("Reviews data:", reviewsData);
+
+          const transformedReviews = reviewsData.map(transformReview);
+          console.log("Transformed reviews:", transformedReviews);
+
           // SORTING LOGIC: Newest date at the top
-          const sortedData = (response.data || []).sort((a, b) => {
-            return new Date(b.createdAt) - new Date(a.createdAt);
+          const sortedData = transformedReviews.sort((a, b) => {
+            return (
+              new Date(b.updateAt || b.reviewDate) -
+              new Date(a.updateAt || a.reviewDate)
+            );
           });
           setReviews(sortedData);
         }
       } catch (error) {
         if (isMounted) {
           console.error("Failed to fetch user reviews:", error);
+          console.error("Error response:", error.response);
+          console.error("Error status:", error.response?.status);
+          console.error("Error data:", error.response?.data);
           setReviews([]);
         }
       } finally {
