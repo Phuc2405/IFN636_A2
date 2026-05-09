@@ -27,6 +27,7 @@ const getMyReviews = async (req, res) => {
         reviewID: r._id,
         albumTitle: r.albumID?.title,
         artist: r.albumID?.artist,
+        coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
         reviewContent: r.reviewContent,
         createdAt: r.reviewDate,
@@ -121,9 +122,12 @@ const writeReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumTitle: populatedReview.albumID?.title,
+        artist: populatedReview.albumID?.artist,
+        coverImageUrl: populatedReview.albumID?.coverImageUrl,
         reviewRate: populatedReview.reviewRate,
         reviewContent: populatedReview.reviewContent,
-        reviewDate: populatedReview.reviewDate,
+        createdAt: populatedReview.reviewDate,
         updateAt: populatedReview.updateAt,
       },
     });
@@ -212,9 +216,12 @@ const updateReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumTitle: populatedReview.albumID?.title,
+        artist: populatedReview.albumID?.artist,
+        coverImageUrl: populatedReview.albumID?.coverImageUrl,
         reviewRate: populatedReview.reviewRate,
         reviewContent: populatedReview.reviewContent,
-        reviewDate: populatedReview.reviewDate,
+        createdAt: populatedReview.reviewDate,
         updateAt: populatedReview.updateAt,
       },
     });
