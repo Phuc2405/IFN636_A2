@@ -8,6 +8,5 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Đã login → render nội dung
   return children;
 }
