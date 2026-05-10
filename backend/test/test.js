@@ -368,9 +368,8 @@ describe("Admin Panel Middleware Test", () => {
 
     admin(req, res, next);
 
-    expect(res.status.calledWith(403)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Access denied. Admin only." }))
-      .to.be.true;
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(res.json.calledWithMatch({ status: "Failed" })).to.be.true;
     expect(next.called).to.be.false;
   });
 
@@ -386,8 +385,7 @@ describe("Admin Panel Middleware Test", () => {
     admin(req, res, next);
 
     expect(res.status.calledWith(403)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Access denied. Admin only." }))
-      .to.be.true;
+    expect(res.json.calledWithMatch({ status: "Failed" })).to.be.true;
     expect(next.called).to.be.false;
   });
 
@@ -847,7 +845,7 @@ describe("Delete Review Function Test", () => {
     expect(res.status.calledWith(401)).to.be.true;
     expect(
       res.json.calledWithMatch({
-        description: "You must be logged in to delete a review",
+        description: "Invalid or expired token",
       }),
     ).to.be.true;
   });
@@ -905,13 +903,47 @@ describe("Delete Review Function Test", () => {
   });
 });
 
-describe("Admin Delete Review Function Test", () => {
-  it("should be forbidden when non-admin users deletes review by admin endpoint", async () => {
+describe("Admin Get All Reviews Function Test", () => {
+  it("should return 200 and get all reviews when admin access", async () => {
     const mockReviewId = new mongoose.Types.ObjectId();
+    const mockUserId = new mongoose.Types.ObjectId();
+    const mockAlbumId = new mongoose.Types.ObjectId();
 
     const req = {
-      user: { type: "user" },
-      params: { reviewID: mockReviewId },
+      user: { type: "admin", id: mockUserId },
+    };
+
+    sinon.stub(Review, "find").returns({
+      populate: sinon.stub().returnsThis(),
+      sort: sinon.stub().resolves([
+        {
+          _id: mockReviewId,
+          albumID: { title: "Album", artist: "Artist", coverImageUrl: "url" },
+          userID: { nickname: "user", email: "user@test.com", type: "user" },
+          reviewRate: 5,
+          reviewContent: "Great!",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]),
+    });
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await reviewController.getAllReviews(req, res);
+
+    expect(res.json.calledOnce).to.be.true;
+    expect(res.json.firstCall.args[0]).to.have.property("responseCode", "200");
+    expect(res.json.firstCall.args[0]).to.have.property("status", "Success");
+    expect(res.json.firstCall.args[0]).to.have.property("totalReviews", 1);
+  });
+
+  it("should return 401 when guest access admin view reviews", async () => {
+    const req = {
+      user: null,
     };
 
     const res = {
@@ -919,19 +951,69 @@ describe("Admin Delete Review Function Test", () => {
       json: sinon.spy(),
     };
 
-    await adminController.deleteReviewByAdmin(req, res);
+    await reviewController.getAllReviews(req, res);
 
-    expect(res.status.calledWith(403)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Access denied. Admins only." }))
-      .to.be.true;
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(
+      res.json.calledWithMatch({
+        description: "Invalid or expired token",
+      }),
+    ).to.be.true;
   });
 
-  it("should be forbidden when guest deletes review by admin endpoint", async () => {
-    const mockReviewId = new mongoose.Types.ObjectId();
+  it("should return 403 when non-admin user access admin view reviews", async () => {
+    const mockUserId = new mongoose.Types.ObjectId();
+
+    const req = {
+      user: { type: "user", id: mockUserId },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await reviewController.getAllReviews(req, res);
+
+    expect(res.status.calledWith(403)).to.be.true;
+    expect(
+      res.json.calledWithMatch({
+        description: "You are not allowed to do this action",
+      }),
+    ).to.be.true;
+  });
+});
+
+describe("Admin Delete Review Function Test", () => {
+  it("should return 401 when guest deletes review by admin endpoint", async () => {
+    const mockReviewId = new mongoose.Types.ObjectId().toString();
 
     const req = {
       user: null,
-      params: { reviewID: mockReviewId },
+      params: { id: mockReviewId },
+    };
+
+    const res = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await adminController.deleteReviewByAdmin(req, res);
+
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(
+      res.json.calledWithMatch({
+        description: "Invalid or expired token",
+      }),
+    ).to.be.true;
+  });
+
+  it("should return 403 when non-admin user deletes review by admin endpoint", async () => {
+    const mockReviewId = new mongoose.Types.ObjectId().toString();
+
+    const req = {
+      user: { type: "user" },
+      params: { id: mockReviewId },
     };
 
     const res = {
@@ -942,20 +1024,27 @@ describe("Admin Delete Review Function Test", () => {
     await adminController.deleteReviewByAdmin(req, res);
 
     expect(res.status.calledWith(403)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Access denied. Admins only." }))
-      .to.be.true;
+    expect(
+      res.json.calledWithMatch({
+        description: "You are not allowed to do this action",
+      }),
+    ).to.be.true;
   });
 
-  it("should delete review by admin endpoint successfully", async () => {
-    const mockReviewId = new mongoose.Types.ObjectId();
+  it("should return 200 when admin deletes review successfully", async () => {
+    const mockReviewId = new mongoose.Types.ObjectId().toString();
 
     const req = {
       user: { type: "admin" },
-      params: { reviewID: mockReviewId },
+      params: { id: mockReviewId },
     };
 
-    sinon.stub(Review, "findById").resolves({ _id: mockReviewId });
-    sinon.stub(Review, "findByIdAndDelete").resolves({ _id: mockReviewId });
+    const mockReview = {
+      _id: mockReviewId,
+      deleteOne: sinon.stub().resolves(),
+    };
+
+    sinon.stub(Review, "findById").resolves(mockReview);
 
     const res = {
       status: sinon.stub().returnsThis(),
@@ -965,16 +1054,19 @@ describe("Admin Delete Review Function Test", () => {
     await adminController.deleteReviewByAdmin(req, res);
 
     expect(res.status.calledWith(200)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Review deleted successfully" }))
-      .to.be.true;
+    expect(
+      res.json.calledWithMatch({
+        description: "Review deleted successfully",
+      }),
+    ).to.be.true;
   });
 
-  it("should return 404 when admin delete review not found", async () => {
-    const notFoundReviewId = new mongoose.Types.ObjectId();
+  it("should return 404 when admin tries delete review not found", async () => {
+    const notFoundReviewId = new mongoose.Types.ObjectId().toString();
 
     const req = {
       user: { type: "admin" },
-      params: { reviewID: notFoundReviewId },
+      params: { id: notFoundReviewId },
     };
 
     sinon.stub(Review, "findById").resolves(null);
@@ -987,7 +1079,7 @@ describe("Admin Delete Review Function Test", () => {
     await adminController.deleteReviewByAdmin(req, res);
 
     expect(res.status.calledWith(404)).to.be.true;
-    expect(res.json.calledWithMatch({ message: "Review not found" })).to.be
+    expect(res.json.calledWithMatch({ description: "Review not found" })).to.be
       .true;
   });
 });

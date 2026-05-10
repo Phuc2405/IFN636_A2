@@ -241,7 +241,7 @@ const deleteReview = async (req, res) => {
     if (!req.user) {
       return res.status(401).json({
         responseCode: "401",
-        description: "You must be logged in to delete a review",
+        description: "Invalid or expired token",
         status: "Failed",
       });
     }
@@ -290,12 +290,46 @@ const deleteReview = async (req, res) => {
 
 const getAllReviews = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        responseCode: "401",
+        description: "Invalid or expired token",
+        status: "Failed",
+      });
+    }
+    if (req.user.type !== "admin") {
+      return res.status(403).json({
+        responseCode: "403",
+        description: "You are not allowed to do this action",
+        status: "Failed",
+      });
+    }
     const reviews = await Review.find()
       .populate("albumID", "title artist coverImageUrl")
-      .populate("userID", "nickname email type")
+      .populate("userID", "nickname email")
       .sort({ createdAt: -1 });
 
-    res.json(reviews);
+    return res.status(200).json({
+      responseCode: "200",
+      description: "Successful",
+      status: "Success",
+      totalReviews: reviews.length,
+      data: reviews.map((r) => ({
+        reviewID: r._id,
+        albumTitle: r.albumID?.title,
+        artist: r.albumID?.artist,
+        coverImageUrl: r.albumID?.coverImageUrl,
+        reviewRate: r.reviewRate,
+        reviewContent: r.reviewContent,
+        createdAt: r.reviewDate,
+        updateAt: r.updateAt,
+        user: {
+          nickname: r.userID?.nickname,
+          email: r.userID?.email,
+          type: r.userID?.type,
+        },
+      })),
+    });
   } catch (error) {
     res.status(500).json({
       responseCode: "500",

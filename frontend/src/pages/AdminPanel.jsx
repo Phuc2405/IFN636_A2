@@ -54,8 +54,35 @@ function AdminPanel() {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
 
+      // Backend returns: { responseCode, description, status, totalReviews, data: [...] }
+      // Transform data to match frontend format
+      const transformReview = (r) => ({
+        _id: r.reviewID,
+        albumID: {
+          title: r.albumTitle,
+          artist: r.artist,
+          coverImageUrl: r.coverImageUrl,
+        },
+        reviewRate: r.reviewRate,
+        reviewContent: r.reviewContent,
+        reviewDate: r.createdAt,
+        updateAt: r.updateAt,
+        userID: {
+          nickname: r.user?.nickname,
+          email: r.user?.email,
+          type: r.user?.type,
+        },
+      });
+
+      // Extract data array from response
+      const reviewsData = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || [];
+
+      const transformedReviews = reviewsData.map(transformReview);
+
       // Sort reviews by the most recent first
-      const sortedReviews = (response.data || []).sort((a, b) => {
+      const sortedReviews = transformedReviews.sort((a, b) => {
         const dateA = new Date(a.updateAt || a.reviewDate);
         const dateB = new Date(b.updateAt || b.reviewDate);
         return dateB - dateA;
@@ -137,7 +164,7 @@ function AdminPanel() {
                 <th className="p-5 font-bold">User</th>
                 <th className="p-5 font-bold text-center">Rating</th>
                 <th className="p-5 font-bold">Review</th>
-                <th className="p-5 font-bold">Date Published</th>
+                <th className="p-5 font-bold">Update Date</th>
                 <th className="p-5 font-bold text-center">Actions</th>
               </tr>
             </thead>

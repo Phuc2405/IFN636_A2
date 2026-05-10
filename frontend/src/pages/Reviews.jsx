@@ -14,9 +14,6 @@ const Reviews = () => {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
 
-  console.log("User from AuthContext:", user);
-  console.log("User token:", user?.token);
-
   // 1. Create a ref to anchor the form location for smooth scrolling
   const formSectionRef = useRef(null);
 

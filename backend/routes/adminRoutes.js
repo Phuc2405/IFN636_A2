@@ -6,8 +6,7 @@ const admin = require("../middleware/adminMiddleware");
 const { getAllReviews } = require("../controllers/reviewController");
 const { deleteReviewByAdmin } = require("../controllers/adminController");
 
-
 router.get("/reviews", protect, admin, getAllReviews);
-router.delete("/reviews/:reviewID", protect, admin, deleteReviewByAdmin);
+router.delete("/reviews/:id", protect, admin, deleteReviewByAdmin);
 
 module.exports = router;
