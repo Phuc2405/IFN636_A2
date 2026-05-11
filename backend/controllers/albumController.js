@@ -29,10 +29,18 @@ const getAlbumById = async (req, res) => {
 
     const album = await AlbumFacade.getAlbumById(albumId);
 
+    if (!album) {
+      return res.status(404).json({
+        responseCode: "404",
+        status: "Failed",
+        description: "Album not found",
+      });
+    }
+
     res.status(200).json({
       responseCode: "200",
       status: "Success",
-      data: albums,
+      data: album,
     });
   } catch (error) {
     Logger.error("Get album by ID error", error);
@@ -40,10 +48,9 @@ const getAlbumById = async (req, res) => {
     res.status(500).json({
       responseCode: "500",
       status: "Failed",
-      description: error,
+      description: error.message,
     });
   }
 };
-
 
 module.exports = { searchAlbums, getAlbumById };
