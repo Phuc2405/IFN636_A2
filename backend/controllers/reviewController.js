@@ -170,6 +170,49 @@ const getAllReviews = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// GET ALBUM RATING STATISTICS
+const getAlbumRatingStats = async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      albumID: req.params.albumID,
+    });
+
+    const distribution = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+    if (reviews.length === 0) {
+      return res.status(200).json({
+        averageRating: 0,
+        totalReviews: 0,
+        distribution,
+      });
+    }
+
+    let totalScore = 0;
+
+    reviews.forEach((review) => {
+      totalScore += review.reviewRate;
+      distribution[review.reviewRate] += 1;
+    });
+
+    const averageRating = Number((totalScore / reviews.length).toFixed(1));
+
+    res.status(200).json({
+      averageRating,
+      totalReviews: reviews.length,
+      distribution,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getMyReviews,
@@ -178,5 +221,6 @@ module.exports = {
   deleteReview,
   getReviewsByAlbum,
   getMyReviewForAlbum,
+  getAlbumRatingStats,
   getAllReviews,
 };

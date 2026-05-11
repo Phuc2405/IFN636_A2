@@ -8,6 +8,7 @@ const {
   getMyReviews,
   getReviewsByAlbum,
   getMyReviewForAlbum,
+  getAlbumRatingStats,
 } = require("../controllers/reviewController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -30,5 +31,7 @@ router.put("/:id", protect, updateReview);
 
 // Delete a review
 router.delete("/:id", protect, deleteReview);
+
+router.get("/album/:albumID/stats", protect, getAlbumRatingStats);
 
 module.exports = router;
