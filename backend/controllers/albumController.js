@@ -43,4 +43,4 @@ const searchAlbums = async (req, res) => {
   }
 };
 
-module.exports = { searchAlbums, getAlbumById, getAllAlbums, createAlbum };
+module.exports = { searchAlbums };
