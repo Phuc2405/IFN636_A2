@@ -1,23 +1,51 @@
 const Review = require("../models/Review");
 
 const deleteReviewByAdmin = async (req, res) => {
-  if (!req.user || req.user.type !== "admin") {
-    return res.status(403).json({ message: "Access denied. Admins only." });
-  }
-
   try {
-    const { reviewID } = req.params;
-
-    const review = await Review.findById(reviewID);
-    if (!review) {
-      return res.status(404).json({ message: "Review not found" });
+    if (!req.user) {
+      return res.status(401).json({
+        responseCode: "401",
+        description: "Invalid or expired token",
+        status: "Failed",
+      });
+    }
+    if (req.user.type !== "admin") {
+      return res.status(403).json({
+        responseCode: "403",
+        description: "You are not allowed to do this action",
+        status: "Failed",
+      });
+    }
+    if (!/^[0-9a-fA-F]{24}$/.test(req.params.id)) {
+      return res.status(404).json({
+        responseCode: "404",
+        description: "Review not found",
+        status: "Failed",
+      });
     }
 
-    await Review.findByIdAndDelete(reviewID);
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({
+        responseCode: "404",
+        description: "Review not found",
+        status: "Failed",
+      });
+    }
 
-    res.status(200).json({ message: "Review deleted successfully" });
+    await review.deleteOne();
+
+    return res.status(200).json({
+      responseCode: "200",
+      description: "Review deleted successfully",
+      status: "Success",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
+    });
   }
 };
 

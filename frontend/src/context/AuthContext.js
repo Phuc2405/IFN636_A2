@@ -35,9 +35,14 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const login = (userData) => {
-    localStorage.setItem("token", userData.token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    // Backend returns: { responseCode, description, status, data: { token, nickname, ... } }
+    // Extract token and data
+    const tokenToStore = userData.token || userData.data?.token;
+    const userDataToStore = userData.data || userData;
+    
+    localStorage.setItem("token", tokenToStore);
+    localStorage.setItem("user", JSON.stringify({ ...userDataToStore, token: tokenToStore }));
+    setUser({ ...userDataToStore, token: tokenToStore });
   };
 
   const logout = () => {
