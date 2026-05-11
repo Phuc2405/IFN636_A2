@@ -14,7 +14,7 @@ const getMyReviews = async (req, res) => {
     }
 
     const reviews = await Review.find({ userID: req.user.id })
-      .populate("albumID", "title artist coverImageUrl")
+      .populate("albumID", "_id title artist coverImageUrl")
       .populate("userID", "nickname")
       .sort({ createdAt: -1 });
 
@@ -26,6 +26,7 @@ const getMyReviews = async (req, res) => {
       data: reviews.map((r) => ({
         reviewID: r._id,
         albumTitle: r.albumID?.title,
+        albumID: r.albumID?._id,
         artist: r.albumID?.artist,
         coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
@@ -122,6 +123,7 @@ const writeReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumID: populatedReview.albumID?._id,
         albumTitle: populatedReview.albumID?.title,
         artist: populatedReview.albumID?.artist,
         coverImageUrl: populatedReview.albumID?.coverImageUrl,
@@ -338,7 +340,7 @@ const getAllReviews = async (req, res) => {
       });
     }
     const reviews = await Review.find()
-      .populate("albumID", "title artist coverImageUrl")
+      .populate("albumID", "_id title artist coverImageUrl")
       .populate("userID", "nickname email")
       .sort({ createdAt: -1 });
 
@@ -351,6 +353,7 @@ const getAllReviews = async (req, res) => {
         reviewID: r._id,
         albumTitle: r.albumID?.title,
         artist: r.albumID?.artist,
+        albumID: r.albumID?._id,
         coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
         reviewContent: r.reviewContent,

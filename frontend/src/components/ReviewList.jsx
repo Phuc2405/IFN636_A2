@@ -37,7 +37,7 @@ const ReviewList = ({ reviews, setReviews, setEditingReview }) => {
               className="bg-[#121212] p-5 rounded-2xl border border-gray-800 flex flex-col sm:flex-row gap-5 shadow-md"
             >
               <Link
-                to={`/albums/${review.albumID?._id}`}
+                to={`/albums/${review.albumID?.id}`}
                 className="flex-shrink-0"
               >
                 <img
@@ -51,7 +51,7 @@ const ReviewList = ({ reviews, setReviews, setEditingReview }) => {
               <div className="flex flex-col flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <Link to={`/albums/${review.albumID?._id}`}>
+                    <Link to={`/albums/${review.albumID?.id}`}>
                       <h4 className="font-bold text-lg text-orange-500 truncate hover:underline">
                         {review.albumID?.title}
                       </h4>

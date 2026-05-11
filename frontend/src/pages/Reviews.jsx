@@ -30,10 +30,7 @@ const Reviews = () => {
       console.log("No token found, skipping fetch");
       return;
     }
-    console.log(
-      "Fetching reviews with token:",
-      user.token?.substring(0, 20) + "...",
-    );
+    console.log("Fetching reviews with token:", user.token?.substring(0, 20) + "...");
     let isMounted = true;
 
     const fetchReviews = async () => {
@@ -50,6 +47,7 @@ const Reviews = () => {
               title: r.albumTitle,
               artist: r.artist,
               coverImageUrl: r.coverImageUrl,
+              id: r.albumID,
             },
             reviewRate: r.reviewRate,
             reviewContent: r.reviewContent,
@@ -60,9 +58,7 @@ const Reviews = () => {
           // Backend returns: { responseCode, description, status, totalReviews, data: [...] }
           // Extract data array and transform each review
           console.log("Raw response:", response.data);
-          const reviewsData = Array.isArray(response.data)
-            ? response.data
-            : response.data?.data || [];
+          const reviewsData = Array.isArray(response.data) ? response.data : response.data?.data || [];
           console.log("Reviews data:", reviewsData);
 
           const transformedReviews = reviewsData.map(transformReview);
@@ -70,10 +66,7 @@ const Reviews = () => {
 
           // SORTING LOGIC: Newest date at the top
           const sortedData = transformedReviews.sort((a, b) => {
-            return (
-              new Date(b.updateAt || b.reviewDate) -
-              new Date(a.updateAt || a.reviewDate)
-            );
+            return new Date(b.updateAt || b.reviewDate) - new Date(a.updateAt || a.reviewDate);
           });
           setReviews(sortedData);
         }
@@ -134,11 +127,7 @@ const Reviews = () => {
         {user && (
           <div className="mb-6 flex justify-start">
             <p className="text-xl text-gray-300 font-medium tracking-wide">
-              Hi,{" "}
-              <span className="text-orange-400 font-bold">
-                {user.nickname || "there"}
-              </span>
-              !
+              Hi, <span className="text-orange-400 font-bold">{user.nickname || "there"}</span>!
             </p>
           </div>
         )}
@@ -154,9 +143,7 @@ const Reviews = () => {
           <h1 className="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400">
             Music Reviews
           </h1>
-          <p className="text-gray-400">
-            Share your thoughts on your favorite albums
-          </p>
+          <p className="text-gray-400">Share your thoughts on your favorite albums</p>
         </div>
 
         {/* Write New Review Button */}
