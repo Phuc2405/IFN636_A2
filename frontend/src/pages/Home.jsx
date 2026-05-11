@@ -23,7 +23,8 @@ const Home = () => {
         setAlbums(response.data.data ?? []);
         setSearched(true);
       } catch (error) {
-        const message = error || error.response?.data?.description || error.message || "Search failed. Please try again.";
+        const message =
+          error || error.response?.data?.description || error.message || "Search failed. Please try again.";
         alert(message);
         return;
       }
@@ -98,20 +99,36 @@ const Home = () => {
                       key={album._id}
                       className="flex items-center p-4 bg-[#303134] rounded-lg shadow-md hover:bg-[#3a3a3a] transition-colors"
                     >
-                      <img
-                        src={album.coverImageUrl || "https://via.placeholder.com/150"}
-                        alt={`${album.title} cover`}
-                        className="w-16 h-16 object-cover rounded mr-4 float-left"
-                      />
+                      <Link to={`/albums/${album._id}`}>
+                        <img
+                          src={album.coverImageUrl || "https://via.placeholder.com/150"}
+                          alt={`${album.title} cover`}
+                          className="w-16 h-16 object-cover rounded mr-4 hover:opacity-80 transition"
+                        />
+                      </Link>
+
                       <div className="flex flex-col flex-1 justify-center">
-                        <h3 className="text-lg font-bold">{album.title}</h3>
+                        <Link to={`/albums/${album._id}`}>
+                          <h3 className="text-lg font-bold hover:text-orange-500 hover:underline transition">
+                            {album.title}
+                          </h3>
+                        </Link>
+
                         <p className="text-gray-400">{album.artist}</p>
                         <p className="text-gray-400 text-sm">{album.releaseYear}</p>
                       </div>
-                      <div>
+
+                      <div className="flex gap-3">
                         <Link
-                          to={"/reviews"}
-                          className="ml-auto bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm"
+                          to={`/albums/${album._id}`}
+                          className="bg-[#1a1a1a] hover:bg-[#252525] text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm border border-gray-700"
+                        >
+                          View Album
+                        </Link>
+
+                        <Link
+                          to={`/albums/${album._id}`}
+                          className="bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm"
                         >
                           Write Review
                         </Link>

@@ -9,6 +9,7 @@ import Reviews from "./pages/Reviews";
 import AdminPanel from "./pages/AdminPanel";
 import Home from "./pages/Home";
 import RedirectIfLoggedIn from "./components/RedirectIfLoggedIn";
+import AlbumDetails from "./pages/AlbumDetails";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
               path="/"
               element={<Home />}
             />
+
             <Route
               path="/reviews"
               element={
@@ -29,6 +31,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/albums/:id"
+              element={
+                <ProtectedRoute>
+                  <AlbumDetails />
+                </ProtectedRoute>
+              }
+            />
+
             <Route
               path="/login"
               element={
@@ -37,6 +49,7 @@ function App() {
                 </RedirectIfLoggedIn>
               }
             />
+
             <Route
               path="/register"
               element={
@@ -45,6 +58,7 @@ function App() {
                 </RedirectIfLoggedIn>
               }
             />
+
             <Route
               path="/admin"
               element={
