@@ -23,4 +23,27 @@ const searchAlbums = async (req, res) => {
   }
 };
 
-module.exports = { searchAlbums };
+const getAlbumById = async (req, res) => {
+  try {
+    const { id: albumId } = req.params;
+
+    const album = await AlbumFacade.getAlbumById(albumId);
+
+    res.status(200).json({
+      responseCode: "200",
+      status: "Success",
+      data: albums,
+    });
+  } catch (error) {
+    Logger.error("Get album by ID error", error);
+
+    res.status(500).json({
+      responseCode: "500",
+      status: "Failed",
+      description: error,
+    });
+  }
+};
+
+
+module.exports = { searchAlbums, getAlbumById };
