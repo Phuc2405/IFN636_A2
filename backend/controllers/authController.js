@@ -83,7 +83,7 @@ const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       responseCode: "500",
       description: "Internal server error",
       status: "Failed",
@@ -173,7 +173,6 @@ const loginUser = async (req, res) => {
     });
   }
 };
-
 const getUserInfo = async (req, res) => {
   return res.json({
     responseCode: "200",
