@@ -41,7 +41,7 @@ const ReviewForm = ({
         const response = await axiosInstance.get("/api/albums/search", {
           params: { q: searchTerm },
         });
-        setSearchResults(response.data || []);
+        setSearchResults(response.data.data || []);
       } catch (error) {
         console.error("Search error:", error);
         setSearchResults([]);

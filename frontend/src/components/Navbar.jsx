@@ -35,7 +35,7 @@ const Navbar = () => {
                 Admin Panel
               </Link>
             )}
-            {user?.type === "user" && (
+            {user && (
               <Link
                 to="/reviews"
                 className="bg-green-500/10 text-green-400 border border-green-500/20 px-6 py-2.5 rounded-xl font-bold hover:bg-green-500 hover:text-white transition-all active:scale-95"
