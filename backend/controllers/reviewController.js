@@ -5,9 +5,7 @@ const Album = require("../models/Album");
 const getMyReviews = async (req, res) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "You must be logged in to view your reviews" });
+      return res.status(401).json({ message: "You must be logged in to view your reviews" });
     }
 
     const reviews = await Review.find({ userID: req.user.id })
@@ -26,9 +24,7 @@ const getMyReviews = async (req, res) => {
 const writeReview = async (req, res) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "Please log in or sign up to write a review" });
+      return res.status(401).json({ message: "Please log in or sign up to write a review" });
     }
 
     const { albumID, reviewRate, reviewContent } = req.body;
@@ -48,9 +44,7 @@ const writeReview = async (req, res) => {
       albumID,
     });
     if (existingReview) {
-      return res
-        .status(400)
-        .json({ message: "You have already reviewed this album" });
+      return res.status(400).json({ message: "You have already reviewed this album" });
     }
 
     const review = await Review.create({
@@ -75,9 +69,7 @@ const writeReview = async (req, res) => {
 const updateReview = async (req, res) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "You must be logged in to edit a review" });
+      return res.status(401).json({ message: "You must be logged in to edit a review" });
     }
 
     const review = await Review.findById(req.params.id);
@@ -87,9 +79,7 @@ const updateReview = async (req, res) => {
     }
 
     if (review.userID.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to edit this review" });
+      return res.status(403).json({ message: "You are not allowed to edit this review" });
     }
 
     const { reviewRate, reviewContent } = req.body;
@@ -114,9 +104,7 @@ const updateReview = async (req, res) => {
 const deleteReview = async (req, res) => {
   try {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({ message: "You must be logged in to delete a review" });
+      return res.status(401).json({ message: "You must be logged in to delete a review" });
     }
 
     const review = await Review.findById(req.params.id);
@@ -126,14 +114,45 @@ const deleteReview = async (req, res) => {
     }
 
     if (review.userID.toString() !== req.user.id) {
-      return res
-        .status(403)
-        .json({ message: "You are not allowed to delete this review" });
+      return res.status(403).json({ message: "You are not allowed to delete this review" });
     }
 
     await review.deleteOne();
 
     res.status(200).json({ message: "Review deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+// GET REVIEWS FOR ONE ALBUM
+const getReviewsByAlbum = async (req, res) => {
+  try {
+    const reviews = await Review.find({ albumID: req.params.albumID })
+      .populate("albumID", "title artist coverImageUrl")
+      .populate("userID", "nickname email type")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET CURRENT USER'S REVIEW FOR ONE ALBUM
+const getMyReviewForAlbum = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "You must be logged in to view your review" });
+    }
+
+    const review = await Review.findOne({
+      albumID: req.params.albumID,
+      userID: req.user.id,
+    })
+      .populate("albumID", "title artist coverImageUrl")
+      .populate("userID", "nickname email type");
+
+    res.status(200).json(review);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -157,5 +176,7 @@ module.exports = {
   writeReview,
   updateReview,
   deleteReview,
+  getReviewsByAlbum,
+  getMyReviewForAlbum,
   getAllReviews,
 };
