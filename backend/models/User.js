@@ -5,8 +5,7 @@ const userSchema = new mongoose.Schema({
   nickname: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  type: { type: String, default: "user" }, // user | admin
-  tokenVersion: { type: Number, default: 0 }
+  type: { type: String, default: "user" } // user | admin
 });
 
 // Hash password
