@@ -18,7 +18,7 @@ router.get("/", protect, getMyReviews);
 router.get("/my-reviews", protect, getMyReviews);
 
 // Get all community reviews for one album
-router.get("/album/:albumID", protect, getReviewsByAlbum);
+router.get("/album/:albumID", getReviewsByAlbum);
 
 // Get current user's review for one album
 router.get("/album/:albumID/my-review", protect, getMyReviewForAlbum);

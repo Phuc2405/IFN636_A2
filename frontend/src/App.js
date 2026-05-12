@@ -34,11 +34,7 @@ function App() {
 
             <Route
               path="/albums/:id"
-              element={
-                <ProtectedRoute>
-                  <AlbumDetails />
-                </ProtectedRoute>
-              }
+              element={<AlbumDetails />}
             />
 
             <Route

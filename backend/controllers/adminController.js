@@ -37,7 +37,7 @@ const deleteReviewByAdmin = async (req, res) => {
 
     return res.status(200).json({
       responseCode: "200",
-      description: "Review deleted successfully",
+      description: "Successfully",
       status: "Success",
     });
   } catch (error) {

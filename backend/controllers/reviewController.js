@@ -292,14 +292,39 @@ const deleteReview = async (req, res) => {
 // GET REVIEWS FOR ONE ALBUM
 const getReviewsByAlbum = async (req, res) => {
   try {
+    if (!/^[0-9a-fA-F]{24}$/.test(req.params.albumID)) {
+      return res.status(408).json({
+        responseCode: "408",
+        description: "Album not found",
+        status: "Failed",
+      });
+    }
+    const album = await Album.findById(req.params.albumID);
+    if (!album) {
+      return res.status(404).json({
+        responseCode: "404",
+        description: "Album not found",
+        status: "Failed",
+      });
+    }
+
     const reviews = await Review.find({ albumID: req.params.albumID })
       .populate("albumID", "title artist coverImageUrl")
       .populate("userID", "nickname email type")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(reviews);
+    res.status(200).json({
+      responseCode: "200",
+      description: "Successful",
+      status: "Success",
+      data: reviews,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
+    });
   }
 };
 
