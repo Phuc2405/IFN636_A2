@@ -35,7 +35,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-76px)] bg-[#202124]  flex flex-col items-center justify-between font-sans text-white">
+    <div className="min-h-[calc(100vh-77px)] bg-[#202124] flex flex-col items-center justify-between font-sans text-white">
       <div className="flex-1"></div>
 
       <div
@@ -92,53 +92,48 @@ const Home = () => {
           {(searched || albums.length > 0) && (
             <div className="mt-10 w-full">
               <h2 className="text-2xl font-semibold mb-4 text-center">Search Results</h2>
-              <ul className="space-y-4">
-                {albums.length > 0 ? (
-                  albums.map((album) => (
-                    <li
-                      key={album._id}
-                      className="flex items-center p-4 bg-[#303134] rounded-lg shadow-md hover:bg-[#3a3a3a] transition-colors"
-                    >
-                      <Link to={`/albums/${album._id}`}>
-                        <img
-                          src={album.coverImageUrl || "https://via.placeholder.com/150"}
-                          alt={`${album.title} cover`}
-                          className="w-16 h-16 object-cover rounded mr-4 hover:opacity-80 transition"
-                        />
-                      </Link>
-
-                      <div className="flex flex-col flex-1 justify-center">
+              <div className="max-h-[560px] overflow-y-auto rounded-3xl border border-[#3a3a3a] bg-[#202124]/90 p-3 shadow-inner">
+                <ul className="space-y-4 pr-2">
+                  {albums.length > 0 ? (
+                    albums.map((album) => (
+                      <li
+                        key={album._id}
+                        className="flex items-center p-4 bg-[#303134] rounded-lg shadow-md hover:bg-[#3a3a3a] transition-colors"
+                      >
                         <Link to={`/albums/${album._id}`}>
-                          <h3 className="text-lg font-bold hover:text-orange-500 hover:underline transition">
-                            {album.title}
-                          </h3>
+                          <img
+                            src={album.coverImageUrl || "https://via.placeholder.com/150"}
+                            alt={`${album.title} cover`}
+                            className="w-16 h-16 object-cover rounded mr-4 hover:opacity-80 transition"
+                          />
                         </Link>
 
-                        <p className="text-gray-400">{album.artist}</p>
-                        <p className="text-gray-400 text-sm">{album.releaseYear}</p>
-                      </div>
+                        <div className="flex flex-col flex-1 justify-center">
+                          <Link to={`/albums/${album._id}`}>
+                            <h3 className="text-lg font-bold hover:text-orange-500 hover:underline transition">
+                              {album.title}
+                            </h3>
+                          </Link>
 
-                      <div className="flex gap-3">
-                        <Link
-                          to={`/albums/${album._id}`}
-                          className="bg-[#1a1a1a] hover:bg-[#252525] text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm border border-gray-700"
-                        >
-                          View Album
-                        </Link>
+                          <p className="text-gray-400">{album.artist}</p>
+                          <p className="text-gray-400 text-sm">{album.releaseYear}</p>
+                        </div>
 
-                        <Link
-                          to={`/albums/${album._id}`}
-                          className="bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm"
-                        >
-                          Write Review
-                        </Link>
-                      </div>
-                    </li>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-8">No albums found. Try a different search term.</p>
-                )}
-              </ul>
+                        <div className="flex gap-3">
+                          <Link
+                            to={`/albums/${album._id}`}
+                            className="bg-orange-500 hover:bg-orange-400 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-center shadow-sm"
+                          >
+                            View Album
+                          </Link>
+                        </div>
+                      </li>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">No albums found. Try a different search term.</p>
+                  )}
+                </ul>
+              </div>
             </div>
           )}
         </form>
