@@ -311,7 +311,7 @@ const getReviewsByAlbum = async (req, res) => {
 
     const reviews = await Review.find({ albumID: req.params.albumID })
       .populate("albumID", "title artist coverImageUrl")
-      .populate("userID", "nickname email type")
+      .populate("userID", "nickname email")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -341,7 +341,7 @@ const getMyReviewForAlbum = async (req, res) => {
       userID: req.user.id,
     })
       .populate("albumID", "title artist coverImageUrl")
-      .populate("userID", "nickname email type");
+      .populate("userID", "nickname email");
 
     res.status(200).json(review);
   } catch (error) {
@@ -378,8 +378,8 @@ const getAllReviews = async (req, res) => {
       data: reviews.map((r) => ({
         reviewID: r._id,
         albumTitle: r.albumID?.title,
-        artist: r.albumID?.artist,
         albumID: r.albumID?._id,
+        artist: r.albumID?.artist,
         coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
         reviewContent: r.reviewContent,
@@ -388,7 +388,6 @@ const getAllReviews = async (req, res) => {
         user: {
           nickname: r.userID?.nickname,
           email: r.userID?.email,
-          type: r.userID?.type,
         },
       })),
     });
