@@ -218,6 +218,7 @@ const updateReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumID: populatedReview.albumID?._id,
         albumTitle: populatedReview.albumID?.title,
         artist: populatedReview.albumID?.artist,
         coverImageUrl: populatedReview.albumID?.coverImageUrl,
