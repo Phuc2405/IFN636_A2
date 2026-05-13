@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../axiosConfig";
 
 const AlbumDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [album, setAlbum] = useState(null);
@@ -51,33 +52,47 @@ const AlbumDetails = () => {
   const fetchAlbumPageData = async () => {
     try {
       setLoading(true);
+      setError("");
 
-      const [albumRes, reviewsRes, myReviewRes] = await Promise.all([
-        axiosInstance.get(`/api/albums/${id}`, authHeader),
-        axiosInstance.get(`/api/reviews/album/${id}`, authHeader),
-        axiosInstance.get(`/api/reviews/album/${id}/my-review`, authHeader),
+      const [albumRes, reviewsRes] = await Promise.all([
+        axiosInstance.get(`/api/albums/${id}`),
+        axiosInstance.get(`/api/reviews/album/${id}`),
       ]);
 
-      setAlbum(albumRes.data.data);
-      setReviews(reviewsRes.data);
-      setMyReview(myReviewRes.data);
+      const albumData = albumRes.data?.data || null;
+      setAlbum(albumData);
 
-      if (myReviewRes.data) {
-        setReviewRate(myReviewRes.data.reviewRate);
-        setReviewContent(myReviewRes.data.reviewContent);
+      const reviewData = reviewsRes.data?.data || [];
+      setReviews(Array.isArray(reviewData) ? reviewData : []);
+
+      if (user?.token) {
+        const myReviewRes = await axiosInstance.get(`/api/reviews/album/${id}/my-review`, authHeader);
+
+        const myReviewData = myReviewRes.data?.data || null;
+        setMyReview(myReviewData);
+
+        if (myReviewData) {
+          setReviewRate(myReviewData.reviewRate);
+          setReviewContent(myReviewData.reviewContent);
+        }
+      } else {
+        setMyReview(null);
       }
     } catch (error) {
-      console.error("Album detail error:", error);
-      setError("Failed to load album details.");
+      console.error("Album detail error:", error.response?.data || error);
+      setError(
+        error.response?.data?.description ||
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to load album details."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user?.token) {
-      fetchAlbumPageData();
-    }
+    fetchAlbumPageData();
   }, [id, user?.token]);
 
   const resetForm = () => {
@@ -87,17 +102,35 @@ const AlbumDetails = () => {
     setShowForm(false);
   };
 
+  const handleWriteReviewClick = () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    setShowForm(true);
+  };
+
   const handleWriteReview = async (e) => {
     e.preventDefault();
 
     try {
-      await axiosInstance.post("/api/reviews", { albumID: id, reviewRate, reviewContent }, authHeader);
+      await axiosInstance.post(
+        "/api/reviews",
+        {
+          albumTitle: album.title,
+          artistName: album.artist,
+          reviewRate,
+          reviewContent,
+        },
+        authHeader
+      );
 
       await fetchAlbumPageData();
       resetForm();
     } catch (error) {
       console.error("Write review error:", error);
-      alert(error.response?.data?.message || "Failed to write review.");
+      alert(error.response?.data?.description || "Failed to write review.");
     }
   };
 
@@ -112,7 +145,7 @@ const AlbumDetails = () => {
       setShowForm(false);
     } catch (error) {
       console.error("Edit review error:", error);
-      alert(error.response?.data?.message || "Failed to update review.");
+      alert(error.response?.data?.description || "Failed to update review.");
     }
   };
 
@@ -125,7 +158,7 @@ const AlbumDetails = () => {
       resetForm();
     } catch (error) {
       console.error("Delete review error:", error);
-      alert(error.response?.data?.message || "Failed to delete review.");
+      alert(error.response?.data?.description || "Failed to delete review.");
     }
   };
 
@@ -138,7 +171,7 @@ const AlbumDetails = () => {
       alert("Review deleted successfully.");
     } catch (error) {
       console.error("Admin delete error:", error);
-      alert(error.response?.data?.message || "Failed to delete review.");
+      alert(error.response?.data?.description || "Failed to delete review.");
     }
   };
 
@@ -250,7 +283,7 @@ const AlbumDetails = () => {
             <section className="mb-10">
               {!myReview && !showForm && (
                 <button
-                  onClick={() => setShowForm(true)}
+                  onClick={handleWriteReviewClick}
                   className="w-full bg-orange-500 text-white font-bold px-5 py-4 rounded-full hover:bg-orange-600 transition shadow-lg"
                 >
                   ✎ Write a Review
