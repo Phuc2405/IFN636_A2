@@ -15,7 +15,7 @@ const protect = async (req, res, next) => {
       if (!token) {
         res.status(401).json({
           responseCode: "401",
-          description: "Not authorized, no token",
+          description: "Invalid or expired token",
           status: "Failed",
         });
       }
@@ -23,7 +23,7 @@ const protect = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({
           responseCode: "401",
-          description: "User no longer exists.",
+          description: "Invalid or expired token",
           status: "Failed",
         });
       }
@@ -32,7 +32,7 @@ const protect = async (req, res, next) => {
       if (decoded.tokenVersion !== user.tokenVersion) {
         return res.status(401).json({
           responseCode: "401",
-          description: "Token has been invalidated. Please log in again.",
+          description: "Invalid or expired token",
           status: "Failed",
         });
       }

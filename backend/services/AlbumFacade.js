@@ -25,11 +25,6 @@ class AlbumFacade {
   async getAlbumById(albumId) {
     try {
       const album = await Album.findById(albumId);
-
-      if (!album) {
-        throw new Error("Album not found");
-      }
-
       return album;
     } catch (error) {
       Logger.error("Failed to retrieve album", error);

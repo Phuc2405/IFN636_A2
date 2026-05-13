@@ -301,8 +301,8 @@ const getReviewsByAlbum = async (req, res) => {
     }
     const album = await Album.findById(req.params.albumID);
     if (!album) {
-      return res.status(404).json({
-        responseCode: "404",
+      return res.status(408).json({
+        responseCode: "408",
         description: "Album not found",
         status: "Failed",
       });

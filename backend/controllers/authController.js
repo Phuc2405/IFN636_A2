@@ -190,13 +190,20 @@ const getUserInfo = async (req, res) => {
 // LOGOUT
 const logoutUser = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({
+        responseCode: "401",
+        description: "Invalid or expired token",
+        status: "Failed",
+      });
+    }
     await User.findByIdAndUpdate(req.user.id, {
       $inc: { tokenVersion: 1 },
     });
 
     res.status(200).json({
       responseCode: "200",
-      description: "Logged out successfully",
+      description: "Successfully",
       status: "Success",
     });
   } catch (error) {
