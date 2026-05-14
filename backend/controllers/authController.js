@@ -137,8 +137,8 @@ const loginUser = async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(407).json({
-        responseCode: "407",
+      return res.status(412).json({
+        responseCode: "412",
         description: "Invalid email or password",
         status: "Failed",
       });
@@ -146,8 +146,8 @@ const loginUser = async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(407).json({
-        responseCode: "407",
+      return res.status(412).json({
+        responseCode: "412",
         description: "Invalid email or password",
         status: "Failed",
       });
