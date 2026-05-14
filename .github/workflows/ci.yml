@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - dev-CICD # Trigger CI on pushes to the main branch
-  workflow_dispatch:
 
 jobs:
   test:
     name: Run Tests
-    runs-on: [aws-self-hosted-1, aws-self-hosted-2]
+    runs-on: [aws-self-hosted-1]
 
     strategy:
       matrix:
