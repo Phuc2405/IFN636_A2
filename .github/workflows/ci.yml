@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: Run Tests
-    runs-on: [aws-self-hosted-1]
+    runs-on: [aws-self-hosted-1, aws-self-hosted-2]
 
     strategy:
       matrix:
