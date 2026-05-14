@@ -3,12 +3,12 @@ name: Backend CI
 on:
   push:
     branches:
-      - dev-CICD # Trigger CI on pushes to the main branch
+      - main # Trigger CI on pushes to the main branch
   workflow_dispatch:
 
 jobs:
   music-album-ec2-1:
-    name: Run Tests
+    name: Music Album EC2-1
     runs-on: [aws-self-hosted-1]
 
     strategy:
@@ -94,7 +94,7 @@ jobs:
       - run: pm2 restart all
 
   music-album-ec2-2:
-    name: Run Tests
+    name: Music Album EC2-2
     runs-on: [aws-self-hosted-2]
 
     strategy:
