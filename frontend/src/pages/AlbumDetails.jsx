@@ -1,7 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../axiosConfig";
+
+const getReviewDateValue = (review) =>
+  review.updateAt || review.updatedAt || review.reviewDate || review.createdAt || 0;
+
+const sortReviewsByNewest = (items = []) =>
+  [...items].sort((a, b) => {
+    const dateB = new Date(getReviewDateValue(b)).getTime();
+    const dateA = new Date(getReviewDateValue(a)).getTime();
+
+    return dateB - dateA;
+  });
+
+const formatReviewDate = (review) => {
+  const dateValue = getReviewDateValue(review);
+
+  if (!dateValue) {
+    return "Unknown date";
+  }
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+
+  return date.toLocaleString();
+};
 
 const AlbumDetails = () => {
   const { id } = useParams();
@@ -20,19 +47,30 @@ const AlbumDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const authHeader = {
-    headers: { Authorization: `Bearer ${user?.token}` },
-  };
+  const authHeader = useMemo(
+    () => ({
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+      },
+    }),
+    [user?.token]
+  );
+
+  const sortedReviews = useMemo(() => sortReviewsByNewest(reviews), [reviews]);
 
   const ratingStats = useMemo(() => {
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
 
     reviews.forEach((review) => {
-      distribution[review.reviewRate] += 1;
+      const rating = Number(review.reviewRate);
+
+      if (distribution[rating] !== undefined) {
+        distribution[rating] += 1;
+      }
     });
 
     const totalReviews = reviews.length;
-    const totalScore = reviews.reduce((sum, review) => sum + review.reviewRate, 0);
+    const totalScore = reviews.reduce((sum, review) => sum + Number(review.reviewRate || 0), 0);
 
     const averageRating = totalReviews === 0 ? 0 : Number((totalScore / totalReviews).toFixed(1));
 
@@ -40,7 +78,8 @@ const AlbumDetails = () => {
   }, [reviews]);
 
   const renderStars = (rating) => {
-    const roundedRating = Math.round(rating);
+    const roundedRating = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+
     return (
       <>
         {"★".repeat(roundedRating)}
@@ -49,7 +88,7 @@ const AlbumDetails = () => {
     );
   };
 
-  const fetchAlbumPageData = async () => {
+  const fetchAlbumPageData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -62,13 +101,13 @@ const AlbumDetails = () => {
       const albumData = albumRes.data?.data || null;
       setAlbum(albumData);
 
-      const reviewData = reviewsRes.data?.data || [];
-      setReviews(Array.isArray(reviewData) ? reviewData : []);
+      const reviewData = reviewsRes.data?.data || reviewsRes.data || [];
+      setReviews(sortReviewsByNewest(Array.isArray(reviewData) ? reviewData : []));
 
       if (user?.token) {
         const myReviewRes = await axiosInstance.get(`/api/reviews/album/${id}/my-review`, authHeader);
 
-        const myReviewData = myReviewRes.data?.data || null;
+        const myReviewData = myReviewRes.data?.data || myReviewRes.data || null;
         setMyReview(myReviewData);
 
         if (myReviewData) {
@@ -89,11 +128,11 @@ const AlbumDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user?.token, authHeader]);
 
   useEffect(() => {
     fetchAlbumPageData();
-  }, [id, user?.token]);
+  }, [fetchAlbumPageData]);
 
   const resetForm = () => {
     setReviewRate(5);
@@ -103,7 +142,7 @@ const AlbumDetails = () => {
   };
 
   const handleWriteReviewClick = () => {
-    if (!user) {
+    if (!user?.token) {
       navigate("/login");
       return;
     }
@@ -129,49 +168,75 @@ const AlbumDetails = () => {
       await fetchAlbumPageData();
       resetForm();
     } catch (error) {
-      console.error("Write review error:", error);
-      alert(error.response?.data?.description || "Failed to write review.");
+      console.error("Write review error:", error.response?.data || error);
+      alert(error.response?.data?.description || error.response?.data?.message || "Failed to write review.");
     }
   };
 
   const handleEditReview = async (e) => {
     e.preventDefault();
 
-    try {
-      await axiosInstance.put(`/api/reviews/${myReview._id}`, { reviewRate, reviewContent }, authHeader);
+    if (!myReview?._id) {
+      return;
+    }
 
-      await fetchAlbumPageData();
+    try {
+      await axiosInstance.put(
+        `/api/reviews/${myReview._id}`,
+        {
+          reviewRate,
+          reviewContent,
+        },
+        authHeader
+      );
+
       setIsEditing(false);
       setShowForm(false);
+      await fetchAlbumPageData();
     } catch (error) {
-      console.error("Edit review error:", error);
-      alert(error.response?.data?.description || "Failed to update review.");
+      console.error("Edit review error:", error.response?.data || error);
+      alert(error.response?.data?.description || error.response?.data?.message || "Failed to update review.");
     }
   };
 
   const handleDeleteMyReview = async () => {
-    if (!window.confirm("Are you sure you want to delete your review?")) return;
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    if (!myReview?._id) {
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete your review?")) {
+      return;
+    }
 
     try {
       await axiosInstance.delete(`/api/reviews/${myReview._id}`, authHeader);
+
+      setMyReview(null);
+      setReviewRate(5);
+      setReviewContent("");
+      setIsEditing(false);
+      setShowForm(false);
+
       await fetchAlbumPageData();
-      resetForm();
     } catch (error) {
-      console.error("Delete review error:", error);
-      alert(error.response?.data?.description || "Failed to delete review.");
+      console.error("Delete review error:", error.response?.data || error);
+      alert(error.response?.data?.description || error.response?.data?.message || "Failed to delete review.");
     }
   };
 
   const handleAdminDeleteReview = async (reviewId) => {
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    if (!window.confirm("Are you sure you want to delete this review?")) {
+      return;
+    }
 
     try {
       await axiosInstance.delete(`/api/admin/reviews/${reviewId}`, authHeader);
       await fetchAlbumPageData();
       alert("Review deleted successfully.");
     } catch (error) {
-      console.error("Admin delete error:", error);
-      alert(error.response?.data?.description || "Failed to delete review.");
+      console.error("Admin delete error:", error.response?.data || error);
+      alert(error.response?.data?.description || error.response?.data?.message || "Failed to delete review.");
     }
   };
 
@@ -223,10 +288,7 @@ const AlbumDetails = () => {
               <p className="mb-6">{album.artist}</p>
 
               <p className="text-xs tracking-[0.25em] text-gray-500 font-bold mb-2">RELEASE YEAR</p>
-              <p className="mb-6">{album.releaseYear || "Not listed"}</p>
-
-              <p className="text-xs tracking-[0.25em] text-gray-500 font-bold mb-2">TOTAL TRACKS</p>
-              <p>{trackList.length > 0 ? `${trackList.length} songs` : "Not listed"}</p>
+              <p>{album.releaseYear || "Not listed"}</p>
             </div>
 
             {trackList.length > 0 && (
@@ -304,32 +366,52 @@ const AlbumDetails = () => {
               )}
 
               {myReview && !isEditing && (
-                <div className="bg-[#121212] border border-gray-800 rounded-xl p-5">
-                  <h2 className="text-xl font-bold mb-4">My Review</h2>
+                <div className="bg-[#121212] p-5 rounded-2xl border border-gray-800 flex flex-col sm:flex-row gap-5 shadow-md">
+                  <img
+                    src={album.coverImageUrl || "https://via.placeholder.com/400"}
+                    className="w-24 h-24 rounded-lg object-cover"
+                    alt="Album Cover"
+                    referrerPolicy="no-referrer"
+                  />
 
-                  <div className="text-orange-500 mb-2">{renderStars(myReview.reviewRate)}</div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-lg text-orange-500 truncate">{album.title}</h4>
+                        <p className="text-sm text-gray-500">{album.artist}</p>
+                      </div>
 
-                  <p className="text-gray-300 whitespace-pre-wrap mb-4">{myReview.reviewContent}</p>
+                      <span className="text-xs text-gray-600 font-bold whitespace-nowrap ml-4">
+                        {formatReviewDate(myReview)}
+                      </span>
+                    </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setReviewRate(myReview.reviewRate);
-                        setReviewContent(myReview.reviewContent);
-                        setIsEditing(true);
-                        setShowForm(true);
-                      }}
-                      className="bg-[#1a1a1a] text-gray-300 text-sm font-bold px-5 py-2 rounded-lg hover:bg-orange-500 hover:text-white transition"
-                    >
-                      Edit
-                    </button>
+                    <div className="text-orange-500 text-sm mb-3">{renderStars(myReview.reviewRate)}</div>
 
-                    <button
-                      onClick={handleDeleteMyReview}
-                      className="text-red-500 text-sm font-bold px-5 py-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition"
-                    >
-                      Delete
-                    </button>
+                    <p className="text-gray-300 leading-relaxed italic mb-4 flex-1 whitespace-pre-wrap">
+                      "{myReview.reviewContent}"
+                    </p>
+
+                    <div className="flex justify-end gap-4 pt-4 border-t border-gray-800">
+                      <button
+                        onClick={() => {
+                          setReviewRate(myReview.reviewRate);
+                          setReviewContent(myReview.reviewContent);
+                          setIsEditing(true);
+                          setShowForm(true);
+                        }}
+                        className="bg-[#1a1a1a] hover:bg-gray-800 text-gray-300 px-6 py-2 rounded-xl font-bold transition-colors"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={handleDeleteMyReview}
+                        className="bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-500 px-6 py-2 rounded-xl font-bold transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -337,51 +419,78 @@ const AlbumDetails = () => {
               {showForm && (
                 <form
                   onSubmit={isEditing ? handleEditReview : handleWriteReview}
-                  className="bg-[#121212] border border-gray-800 rounded-xl p-5 flex flex-col gap-4"
+                  className="bg-[#121212] p-8 shadow-xl border-y sm:border sm:rounded-2xl border-gray-800 text-white w-full mt-8"
                 >
-                  <h2 className="text-xl font-bold">{isEditing ? "Edit Review" : "Write Review"}</h2>
+                  <h2 className="text-2xl font-bold mb-8 text-orange-500 border-b border-gray-800 pb-4">
+                    {isEditing ? "Edit Your Review" : "Write Review"}
+                  </h2>
 
-                  <label className="text-sm text-gray-400">
-                    Rating
-                    <select
-                      value={reviewRate}
-                      onChange={(e) => setReviewRate(Number(e.target.value))}
-                      className="block mt-2 bg-black border border-gray-700 rounded-lg px-3 py-2 text-white"
-                    >
-                      <option value={1}>1 Star</option>
-                      <option value={2}>2 Stars</option>
-                      <option value={3}>3 Stars</option>
-                      <option value={4}>4 Stars</option>
-                      <option value={5}>5 Stars</option>
-                    </select>
-                  </label>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <div className="flex items-center gap-4 p-4 bg-[#1a1a1a] border border-orange-500/30 rounded-xl">
+                      <img
+                        src={album.coverImageUrl || "https://via.placeholder.com/400"}
+                        alt={album.title}
+                        className="w-16 h-16 rounded-md object-cover shadow-md"
+                        referrerPolicy="no-referrer"
+                      />
 
-                  <label className="text-sm text-gray-400">
-                    Review
-                    <textarea
-                      value={reviewContent}
-                      onChange={(e) => setReviewContent(e.target.value)}
-                      required
-                      rows="5"
-                      className="block mt-2 w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white"
-                    />
-                  </label>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-lg truncate">{album.title}</p>
+                        <p className="text-sm text-gray-400 truncate">{album.artist}</p>
+                      </div>
+                    </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      className="bg-orange-500 text-white font-bold px-5 py-2 rounded-lg hover:bg-orange-600 transition"
-                    >
-                      {isEditing ? "Save Changes" : "Submit Review"}
-                    </button>
+                    <div className="flex flex-col">
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                          Step 2: Rating
+                        </label>
 
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="bg-[#1a1a1a] text-gray-300 font-bold px-5 py-2 rounded-lg hover:bg-gray-800 transition"
-                    >
-                      Cancel
-                    </button>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRate(star)}
+                              className={`text-2xl transition-transform active:scale-90 outline-none ${
+                                star <= reviewRate ? "text-orange-500" : "text-gray-800 hover:text-gray-600"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                        Step 3: Comment
+                      </label>
+
+                      <textarea
+                        placeholder="What did you think about this album?"
+                        value={reviewContent}
+                        onChange={(e) => setReviewContent(e.target.value)}
+                        required
+                        className="w-full p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl outline-none focus:border-orange-500 h-[80px] resize-none transition-all placeholder:text-gray-600 mb-6"
+                      />
+
+                      <div className="flex gap-4 mt-auto">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
+                        >
+                          {isEditing ? "Update Review" : "Submit Review"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={resetForm}
+                          className="px-8 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors font-bold active:scale-95"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </form>
               )}
@@ -393,21 +502,26 @@ const AlbumDetails = () => {
                 <div className="h-px bg-gray-800 flex-1"></div>
               </div>
 
-              {reviews.length === 0 ? (
+              {sortedReviews.length === 0 ? (
                 <p className="text-gray-500 italic">No community reviews yet.</p>
               ) : (
                 <div className="flex flex-col">
-                  {reviews.map((review) => (
+                  {sortedReviews.map((review) => (
                     <div
                       key={review._id}
                       className="border-b border-gray-900 py-6"
                     >
                       <div className="flex justify-between gap-4 mb-2">
                         <div>
-                          <p className="font-bold">{review.userID?.nickname || "Unknown user"}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(review.updateAt || review.reviewDate).toLocaleString()}
+                          <p className="font-bold">
+                            {review.userID?.nickname ||
+                              review.userID?.name ||
+                              review.user?.nickname ||
+                              review.user?.name ||
+                              "Unknown user"}
                           </p>
+
+                          <p className="text-xs text-gray-500">{formatReviewDate(review)}</p>
                         </div>
 
                         <div className="text-orange-500 text-sm whitespace-nowrap">
