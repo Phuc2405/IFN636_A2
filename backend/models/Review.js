@@ -6,31 +6,41 @@ const reviewSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
-      max: 5
+      max: 5,
     },
 
     reviewContent: {
       type: String,
-      required: true
+      required: true,
     },
 
     userID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
 
-    albumID: {
+    userID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Album",
-      required: true
-    }
+      ref: "User",
+      required: true,
+    },
+    userID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    userID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   {
     timestamps: {
       createdAt: "reviewDate",
-      updatedAt: "updateAt"
-    }
+      updatedAt: "updateAt",
+    },
   }
 );
 
