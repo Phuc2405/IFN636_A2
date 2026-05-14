@@ -103,6 +103,7 @@ function AdminPanel() {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
       setReviews((prev) => prev.filter((r) => r._id !== reviewID));
+      alert("Review deleted successfully.");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete review");
     }
@@ -137,8 +138,13 @@ function AdminPanel() {
     );
   }
 
-  if (error) return <div className="p-10 text-red-400 text-center font-bold">{error}</div>;
-
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center">
+        <p className="text-red-400 text-center font-bold">{error}</p>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white py-12 px-6">
       <div className="mx-auto max-w-7xl">

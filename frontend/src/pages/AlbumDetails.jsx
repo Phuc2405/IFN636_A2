@@ -176,15 +176,28 @@ const AlbumDetails = () => {
   };
 
   if (loading) {
-    return <div className="text-white text-center mt-10">Loading album details...</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-gray-800 border-t-orange-400 rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-400 font-medium">Loading album details...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500 text-center mt-10">{error}</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center">
+        <p className="text-red-400 text-center font-bold">{error}</p>
+      </div>
+    );
   }
 
   if (!album) {
-    return <div className="text-gray-400 text-center mt-10">Album not found.</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center">
+        <p className="text-red-400 text-center font-bold">Album not found.</p>
+      </div>
+    );
   }
 
   const trackList = album.tracks || album.trackList || [];

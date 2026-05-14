@@ -14,6 +14,7 @@ const ReviewList = ({ reviews, setReviews, setEditingReview }) => {
       });
 
       setReviews(reviews.filter((review) => review._id !== reviewId));
+      alert("Review deleted successfully.");
     } catch (error) {
       console.error("Delete error:", error);
       alert("Failed to delete review.");
