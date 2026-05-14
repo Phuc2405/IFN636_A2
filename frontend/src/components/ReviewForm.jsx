@@ -49,7 +49,7 @@ const ReviewForm = ({
     };
 
     searchAlbums();
-  }, [searchTerm, selectedAlbum, editingReview]);
+  }, [searchTerm, selectedAlbum, editingReview, searchResults]);
 
   const handleSelectAlbum = (album) => {
     setSelectedAlbum(album);
