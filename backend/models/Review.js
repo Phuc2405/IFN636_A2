@@ -20,19 +20,9 @@ const reviewSchema = new mongoose.Schema(
       required: true,
     },
 
-    userID: {
+    albumID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    userID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    userID: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Album",
       required: true,
     },
   },
