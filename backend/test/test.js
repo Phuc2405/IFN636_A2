@@ -92,7 +92,7 @@ describe("Login Function Test", () => {
     expect(res.json.calledWithMatch({ description: "Invalid email format" })).to.be.true;
   });
 
-  it("should return 407 for incorrect username or password", async () => {
+  it("should return 412 for incorrect username or password", async () => {
     const mockUserId = new mongoose.Types.ObjectId();
 
     const req = {
@@ -114,11 +114,11 @@ describe("Login Function Test", () => {
 
     await authController.loginUser(req, res);
 
-    expect(res.status.calledWith(407)).to.be.true;
+    expect(res.status.calledWith(412)).to.be.true;
     expect(res.json.calledWithMatch({ description: "Invalid email or password" })).to.be.true;
   });
 
-  it("should return 407 when email does not exist", async () => {
+  it("should return 412 when email does not exist", async () => {
     const req = {
       body: { email: "notfound@example.com", password: "any" },
     };
@@ -131,7 +131,7 @@ describe("Login Function Test", () => {
     };
     await authController.loginUser(req, res);
 
-    expect(res.status.calledWith(407)).to.be.true;
+    expect(res.status.calledWith(412)).to.be.true;
     expect(res.json.calledWithMatch({ description: "Invalid email or password" })).to.be.true;
   });
 

@@ -44,7 +44,7 @@ const Register = () => {
     } catch (error) {
       console.error("Registration Error:", error);
       const message =
-        error.response?.data?.message ||
+        error.response?.data?.description ||
         error.response?.statusText ||
         error.message ||
         "Registration failed. Please try again.";
@@ -77,7 +77,10 @@ const Register = () => {
             Sign Up
           </h1>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 w-full"
+          >
             {/* Nickname Field */}
             <div className="flex flex-col">
               <div className="flex items-center bg-black/40 rounded-xl p-4 border border-white/10 focus-within:border-orange-500 focus-within:ring-1 focus-within:ring-orange-500 transition-all duration-300 group">
@@ -99,9 +102,7 @@ const Register = () => {
                   type="text"
                   placeholder="Nickname (e.g., Felix)"
                   value={formData.nickname}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nickname: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
                   className="bg-transparent border-none outline-none text-white ml-4 w-full placeholder-gray-400"
                   required
                 />
@@ -131,9 +132,7 @@ const Register = () => {
                 type="email"
                 placeholder="Email Address"
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="bg-transparent border-none outline-none text-white ml-4 w-full placeholder-gray-400"
                 required
               />
@@ -159,9 +158,7 @@ const Register = () => {
                 type="password"
                 placeholder="Password"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="bg-transparent border-none outline-none text-white ml-4 w-full placeholder-gray-400"
                 required
               />
@@ -187,9 +184,7 @@ const Register = () => {
                 type="password"
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, confirmPassword: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="bg-transparent border-none outline-none text-white ml-4 w-full placeholder-gray-400"
                 required
               />
