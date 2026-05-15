@@ -58,6 +58,12 @@ jobs:
           yarn --version
           yarn install
 
+      - name: Write production secrets to .env file in AWS (FE)
+        run: |
+          cd ./frontend
+          touch .env
+          echo "${{ secrets.PROD_FE_1 }}" > .env
+
       # Install dependencies for frontend
       - name: Install Frontend Dependencies
         working-directory: ./frontend
@@ -143,6 +149,12 @@ jobs:
           npm install --global yarn
           yarn --version
           yarn install
+
+      - name: Write production secrets to .env file in AWS (FE)
+        run: |
+          cd ./frontend
+          touch .env
+          echo "${{ secrets.PROD_FE_2 }}" > .env
 
       # Install dependencies for frontend
       - name: Install Frontend Dependencies
