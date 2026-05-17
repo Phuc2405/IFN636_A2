@@ -10,10 +10,13 @@ Note: due to technical restraints this link may change.
 
 Due to this fact please refer to:
 EC2 Instance ID and Name:
+
 i-0c1b6ccb2c6e36794 // Music_Album_Review_System_Team42-1
+
 i-062b72b30801f74c7 // Music_Album_Review_System_Team42-2
 
 For questions regarding load balancing please use:
+
 ALB DNS Name: MusicAlbumALB-72304737.ap-southeast-2.elb.amazonaws.com
 
 ---
