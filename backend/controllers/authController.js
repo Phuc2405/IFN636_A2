@@ -2,9 +2,9 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const generateToken = (id) => {
+const generateToken = (user) => {
   const secret = process.env.JWT_SECRET || "defaultsecret";
-  return jwt.sign({ id }, secret, { expiresIn: "30d" });
+  return jwt.sign({ id: user.id, tokenVersion: user.tokenVersion }, secret, { expiresIn: "30d" });
 };
 
 // REGISTER
@@ -46,10 +46,7 @@ const registerUser = async (req, res) => {
     if (authHeader && authHeader.startsWith("Bearer ")) {
       try {
         const token = authHeader.split(" ")[1];
-        const decoded = jwt.verify(
-          token,
-          process.env.JWT_SECRET || "defaultsecret",
-        );
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "defaultsecret");
         return res.status(409).json({
           responseCode: "409",
           description: "User has already logged in",
@@ -81,12 +78,12 @@ const registerUser = async (req, res) => {
         nickname: user.nickname,
         email: user.email,
         type: user.type,
-        token: generateToken(user.id),
+        token: generateToken(user),
       },
     });
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       responseCode: "500",
       description: "Internal server error",
       status: "Failed",
@@ -140,8 +137,8 @@ const loginUser = async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(407).json({
-        responseCode: "407",
+      return res.status(412).json({
+        responseCode: "412",
         description: "Invalid email or password",
         status: "Failed",
       });
@@ -149,14 +146,14 @@ const loginUser = async (req, res) => {
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(407).json({
-        responseCode: "407",
+      return res.status(412).json({
+        responseCode: "412",
         description: "Invalid email or password",
         status: "Failed",
       });
     }
 
-    res.json({
+    return res.json({
       responseCode: "200",
       description: "Successful",
       status: "Success",
@@ -164,12 +161,12 @@ const loginUser = async (req, res) => {
         nickname: user.nickname,
         email: user.email,
         type: user.type,
-        token: generateToken(user.id),
+        token: generateToken(user),
       },
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       responseCode: "500",
       description: "Internal server error",
       status: "Failed",
@@ -190,4 +187,28 @@ const getUserInfo = async (req, res) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getUserInfo };
+// LOGOUT
+const logoutUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        responseCode: "401",
+        description: "Invalid or expired token",
+        status: "Failed",
+      });
+    }
+    await User.findByIdAndUpdate(req.user.id, {
+      $inc: { tokenVersion: 1 },
+    });
+
+    res.status(200).json({
+      responseCode: "200",
+      description: "Successfully",
+      status: "Success",
+    });
+  } catch (error) {
+    res.status(500).json({ responseCode: "500", description: "Internal server error", status: "Failed" });
+  }
+};
+
+module.exports = { registerUser, loginUser, getUserInfo, logoutUser };

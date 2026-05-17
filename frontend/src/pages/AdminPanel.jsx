@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react"; // Added useCallback
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../axiosConfig";
+import { Link } from "react-router-dom";
 
 // Sub-component for handling the "Read More" logic only when necessary
 const ReviewContent = ({ content }) => {
@@ -62,6 +63,7 @@ function AdminPanel() {
           title: r.albumTitle,
           artist: r.artist,
           coverImageUrl: r.coverImageUrl,
+          id: r.albumID,
         },
         reviewRate: r.reviewRate,
         reviewContent: r.reviewContent,
@@ -75,9 +77,7 @@ function AdminPanel() {
       });
 
       // Extract data array from response
-      const reviewsData = Array.isArray(response.data)
-        ? response.data
-        : response.data?.data || [];
+      const reviewsData = Array.isArray(response.data) ? response.data : response.data?.data || [];
 
       const transformedReviews = reviewsData.map(transformReview);
 
@@ -90,9 +90,7 @@ function AdminPanel() {
 
       setReviews(sortedReviews);
     } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Cannot fetch reviews.",
-      );
+      setError(err.response?.data?.message || err.message || "Cannot fetch reviews.");
     } finally {
       setLoading(false);
     }
@@ -105,6 +103,7 @@ function AdminPanel() {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
       setReviews((prev) => prev.filter((r) => r._id !== reviewID));
+      alert("Review deleted successfully.");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete review");
     }
@@ -139,11 +138,13 @@ function AdminPanel() {
     );
   }
 
-  if (error)
+  if (error) {
     return (
-      <div className="p-10 text-red-400 text-center font-bold">{error}</div>
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center">
+        <p className="text-red-400 text-center font-bold">{error}</p>
+      </div>
     );
-
+  }
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white py-12 px-6">
       <div className="mx-auto max-w-7xl">
@@ -175,11 +176,14 @@ function AdminPanel() {
                   className="hover:bg-white/[0.02] transition-colors"
                 >
                   <td className="p-5 font-bold text-orange-400 text-sm uppercase tracking-tight">
-                    {r.albumID?.title}
+                    <Link
+                      to={`/albums/${r.albumID?.id}`}
+                      className="flex-shrink-0"
+                    >
+                      {r.albumID?.title}
+                    </Link>
                   </td>
-                  <td className="p-5 text-gray-300 text-sm font-medium">
-                    {r.userID?.nickname}
-                  </td>
+                  <td className="p-5 text-gray-300 text-sm font-medium">{r.userID?.nickname}</td>
                   <td className="p-5 text-center">
                     <span className="bg-orange-500/10 text-orange-400 px-3 py-1 rounded-md border border-orange-500/20 font-bold text-xs">
                       {r.reviewRate} ★
@@ -204,9 +208,7 @@ function AdminPanel() {
             </tbody>
           </table>
           {reviews.length === 0 && (
-            <div className="p-12 text-center text-gray-500 font-medium">
-              No reviews found in the database.
-            </div>
+            <div className="p-12 text-center text-gray-500 font-medium">No reviews found in the database.</div>
           )}
         </div>
       </div>

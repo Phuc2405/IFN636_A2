@@ -6,21 +6,32 @@ const {
   updateReview,
   deleteReview,
   getMyReviews,
+  getReviewsByAlbum,
+  getMyReviewForAlbum,
+  getAlbumRatingStats,
 } = require("../controllers/reviewController");
 
 const { protect } = require("../middleware/authMiddleware");
 
-// Get my reviews (user only)
+// Get my reviews
 router.get("/", protect, getMyReviews);
-router.get("/my-reviews", protect, getMyReviews); // alias for compatibility
+router.get("/my-reviews", protect, getMyReviews);
 
-// Write a review (guest users are blocked)
+// Get all community reviews for one album
+router.get("/album/:albumID", getReviewsByAlbum);
+
+// Get current user's review for one album
+router.get("/album/:albumID/my-review", protect, getMyReviewForAlbum);
+
+// Write a review
 router.post("/", protect, writeReview);
 
-// Update a review (only the owner can edit)
+// Update a review
 router.put("/:id", protect, updateReview);
 
-// Delete a review (only the owner can delete)
+// Delete a review
 router.delete("/:id", protect, deleteReview);
+
+router.get("/album/:albumID/stats", protect, getAlbumRatingStats);
 
 module.exports = router;

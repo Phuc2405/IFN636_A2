@@ -14,7 +14,7 @@ const getMyReviews = async (req, res) => {
     }
 
     const reviews = await Review.find({ userID: req.user.id })
-      .populate("albumID", "title artist coverImageUrl")
+      .populate("albumID", "_id title artist coverImageUrl")
       .populate("userID", "nickname")
       .sort({ createdAt: -1 });
 
@@ -26,6 +26,7 @@ const getMyReviews = async (req, res) => {
       data: reviews.map((r) => ({
         reviewID: r._id,
         albumTitle: r.albumID?.title,
+        albumID: r.albumID?._id,
         artist: r.albumID?.artist,
         coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
@@ -122,6 +123,7 @@ const writeReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumID: populatedReview.albumID?._id,
         albumTitle: populatedReview.albumID?.title,
         artist: populatedReview.albumID?.artist,
         coverImageUrl: populatedReview.albumID?.coverImageUrl,
@@ -216,6 +218,7 @@ const updateReview = async (req, res) => {
       status: "Success",
       data: {
         reviewID: populatedReview._id,
+        albumID: populatedReview.albumID?._id,
         albumTitle: populatedReview.albumID?.title,
         artist: populatedReview.albumID?.artist,
         coverImageUrl: populatedReview.albumID?.coverImageUrl,
@@ -287,6 +290,64 @@ const deleteReview = async (req, res) => {
     });
   }
 };
+// GET REVIEWS FOR ONE ALBUM
+const getReviewsByAlbum = async (req, res) => {
+  try {
+    if (!/^[0-9a-fA-F]{24}$/.test(req.params.albumID)) {
+      return res.status(408).json({
+        responseCode: "408",
+        description: "Album not found",
+        status: "Failed",
+      });
+    }
+    const album = await Album.findById(req.params.albumID);
+    if (!album) {
+      return res.status(408).json({
+        responseCode: "408",
+        description: "Album not found",
+        status: "Failed",
+      });
+    }
+
+    const reviews = await Review.find({ albumID: req.params.albumID })
+      .populate("albumID", "title artist coverImageUrl")
+      .populate("userID", "nickname email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      responseCode: "200",
+      description: "Successful",
+      status: "Success",
+      data: reviews,
+    });
+  } catch (error) {
+    res.status(500).json({
+      responseCode: "500",
+      description: "Internal server error",
+      status: "Failed",
+    });
+  }
+};
+
+// GET CURRENT USER'S REVIEW FOR ONE ALBUM
+const getMyReviewForAlbum = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "You must be logged in to view your review" });
+    }
+
+    const review = await Review.findOne({
+      albumID: req.params.albumID,
+      userID: req.user.id,
+    })
+      .populate("albumID", "title artist coverImageUrl")
+      .populate("userID", "nickname email");
+
+    res.status(200).json(review);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 const getAllReviews = async (req, res) => {
   try {
@@ -305,7 +366,7 @@ const getAllReviews = async (req, res) => {
       });
     }
     const reviews = await Review.find()
-      .populate("albumID", "title artist coverImageUrl")
+      .populate("albumID", "_id title artist coverImageUrl")
       .populate("userID", "nickname email")
       .sort({ createdAt: -1 });
 
@@ -317,6 +378,7 @@ const getAllReviews = async (req, res) => {
       data: reviews.map((r) => ({
         reviewID: r._id,
         albumTitle: r.albumID?.title,
+        albumID: r.albumID?._id,
         artist: r.albumID?.artist,
         coverImageUrl: r.albumID?.coverImageUrl,
         reviewRate: r.reviewRate,
@@ -326,7 +388,6 @@ const getAllReviews = async (req, res) => {
         user: {
           nickname: r.userID?.nickname,
           email: r.userID?.email,
-          type: r.userID?.type,
         },
       })),
     });
@@ -338,11 +399,57 @@ const getAllReviews = async (req, res) => {
     });
   }
 };
+// GET ALBUM RATING STATISTICS
+const getAlbumRatingStats = async (req, res) => {
+  try {
+    const reviews = await Review.find({
+      albumID: req.params.albumID,
+    });
+
+    const distribution = {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    };
+
+    if (reviews.length === 0) {
+      return res.status(200).json({
+        averageRating: 0,
+        totalReviews: 0,
+        distribution,
+      });
+    }
+
+    let totalScore = 0;
+
+    reviews.forEach((review) => {
+      totalScore += review.reviewRate;
+      distribution[review.reviewRate] += 1;
+    });
+
+    const averageRating = Number((totalScore / reviews.length).toFixed(1));
+
+    res.status(200).json({
+      averageRating,
+      totalReviews: reviews.length,
+      distribution,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   getMyReviews,
   writeReview,
   updateReview,
   deleteReview,
+  getReviewsByAlbum,
+  getMyReviewForAlbum,
+  getAlbumRatingStats,
   getAllReviews,
 };

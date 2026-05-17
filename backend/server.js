@@ -17,9 +17,17 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 
 // Start server
 if (require.main === module) {
-  connectDB();
   const PORT = process.env.PORT || 5001;
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+  const startServer = async () => {
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  };
+
+  startServer();
 }
 
 module.exports = app;
