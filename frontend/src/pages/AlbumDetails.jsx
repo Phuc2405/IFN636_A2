@@ -200,7 +200,6 @@ const AlbumDetails = () => {
   };
 
   const handleDeleteMyReview = async () => {
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
     if (!myReview?._id) {
       return;
     }
@@ -365,57 +364,6 @@ const AlbumDetails = () => {
                 </button>
               )}
 
-              {myReview && !isEditing && (
-                <div className="bg-[#121212] p-5 rounded-2xl border border-gray-800 flex flex-col sm:flex-row gap-5 shadow-md">
-                  <img
-                    src={album.coverImageUrl || "https://via.placeholder.com/400"}
-                    className="w-24 h-24 rounded-lg object-cover"
-                    alt="Album Cover"
-                    referrerPolicy="no-referrer"
-                  />
-
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-bold text-lg text-orange-500 truncate">{album.title}</h4>
-                        <p className="text-sm text-gray-500">{album.artist}</p>
-                      </div>
-
-                      <span className="text-xs text-gray-600 font-bold whitespace-nowrap ml-4">
-                        {formatReviewDate(myReview)}
-                      </span>
-                    </div>
-
-                    <div className="text-orange-500 text-sm mb-3">{renderStars(myReview.reviewRate)}</div>
-
-                    <p className="text-gray-300 leading-relaxed italic mb-4 flex-1 whitespace-pre-wrap">
-                      "{myReview.reviewContent}"
-                    </p>
-
-                    <div className="flex justify-end gap-4 pt-4 border-t border-gray-800">
-                      <button
-                        onClick={() => {
-                          setReviewRate(myReview.reviewRate);
-                          setReviewContent(myReview.reviewContent);
-                          setIsEditing(true);
-                          setShowForm(true);
-                        }}
-                        className="bg-[#1a1a1a] hover:bg-gray-800 text-gray-300 px-6 py-2 rounded-xl font-bold transition-colors"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={handleDeleteMyReview}
-                        className="bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-500 px-6 py-2 rounded-xl font-bold transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {showForm && (
                 <form
                   onSubmit={isEditing ? handleEditReview : handleWriteReview}
@@ -425,22 +373,8 @@ const AlbumDetails = () => {
                     {isEditing ? "Edit Your Review" : "Write Review"}
                   </h2>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <div className="flex items-center gap-4 p-4 bg-[#1a1a1a] border border-orange-500/30 rounded-xl">
-                      <img
-                        src={album.coverImageUrl || "https://via.placeholder.com/400"}
-                        alt={album.title}
-                        className="w-16 h-16 rounded-md object-cover shadow-md"
-                        referrerPolicy="no-referrer"
-                      />
-
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white text-lg truncate">{album.title}</p>
-                        <p className="text-sm text-gray-400 truncate">{album.artist}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col">
+                  <div className="flex flex-col gap-6 max-w-xl">
+                    <div>
                       <div className="flex justify-between items-center mb-3">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                           Step 2: Rating
@@ -461,8 +395,10 @@ const AlbumDetails = () => {
                           ))}
                         </div>
                       </div>
+                    </div>
 
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 block">
                         Step 3: Comment
                       </label>
 
@@ -471,25 +407,25 @@ const AlbumDetails = () => {
                         value={reviewContent}
                         onChange={(e) => setReviewContent(e.target.value)}
                         required
-                        className="w-full p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl outline-none focus:border-orange-500 h-[80px] resize-none transition-all placeholder:text-gray-600 mb-6"
+                        className="w-full p-4 bg-[#1a1a1a] border border-gray-800 rounded-xl outline-none focus:border-orange-500 h-[120px] resize-none transition-all placeholder:text-gray-600"
                       />
+                    </div>
 
-                      <div className="flex gap-4 mt-auto">
-                        <button
-                          type="submit"
-                          className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
-                        >
-                          {isEditing ? "Update Review" : "Submit Review"}
-                        </button>
+                    <div className="flex gap-4">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-orange-500 hover:bg-orange-400 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95"
+                      >
+                        {isEditing ? "Update Review" : "Submit Review"}
+                      </button>
 
-                        <button
-                          type="button"
-                          onClick={resetForm}
-                          className="px-8 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors font-bold active:scale-95"
-                        >
-                          Clear
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={resetForm}
+                        className="px-8 py-3 bg-[#1a1a1a] border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-colors font-bold active:scale-95"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
                 </form>
@@ -506,43 +442,70 @@ const AlbumDetails = () => {
                 <p className="text-gray-500 italic">No community reviews yet.</p>
               ) : (
                 <div className="flex flex-col">
-                  {sortedReviews.map((review) => (
-                    <div
-                      key={review._id}
-                      className="border-b border-gray-900 py-6"
-                    >
-                      <div className="flex justify-between gap-4 mb-2">
-                        <div>
-                          <p className="font-bold">
-                            {review.userID?.nickname ||
-                              review.userID?.name ||
-                              review.user?.nickname ||
-                              review.user?.name ||
-                              "Unknown user"}
-                          </p>
+                  {sortedReviews.map((review) => {
+                    const isMyReview = myReview?._id === review._id;
 
-                          <p className="text-xs text-gray-500">{formatReviewDate(review)}</p>
+                    return (
+                      <div
+                        key={review._id}
+                        className="border-b border-gray-900 py-6"
+                      >
+                        <div className="flex justify-between gap-4 mb-2">
+                          <div>
+                            <p className="font-bold">
+                              {review.userID?.nickname ||
+                                review.userID?.name ||
+                                review.user?.nickname ||
+                                review.user?.name ||
+                                "Unknown user"}
+                            </p>
+
+                            <p className="text-xs text-gray-500">{formatReviewDate(review)}</p>
+                          </div>
+
+                          <div className="text-orange-500 text-sm whitespace-nowrap">
+                            {renderStars(review.reviewRate)}
+                          </div>
                         </div>
 
-                        <div className="text-orange-500 text-sm whitespace-nowrap">
-                          {renderStars(review.reviewRate)}
+                        <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">{review.reviewContent}</p>
+
+                        <div className="flex justify-end gap-3 mt-4">
+                          {isMyReview && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setReviewRate(myReview.reviewRate);
+                                  setReviewContent(myReview.reviewContent);
+                                  setIsEditing(true);
+                                  setShowForm(true);
+                                }}
+                                className="bg-[#1a1a1a] hover:bg-gray-800 text-gray-300 px-5 py-2 rounded-lg font-bold transition-colors"
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                onClick={handleDeleteMyReview}
+                                className="bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-500 px-5 py-2 rounded-lg font-bold transition-colors"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+
+                          {user?.type === "admin" && !isMyReview && (
+                            <button
+                              onClick={() => handleAdminDeleteReview(review._id)}
+                              className="text-red-500 text-sm font-bold px-5 py-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </div>
-
-                      <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">{review.reviewContent}</p>
-
-                      {user?.type === "admin" && (
-                        <div className="flex justify-end mt-4">
-                          <button
-                            onClick={() => handleAdminDeleteReview(review._id)}
-                            className="text-red-500 text-sm font-bold px-5 py-2 rounded-lg border border-red-500/20 hover:bg-red-500/10 transition"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
