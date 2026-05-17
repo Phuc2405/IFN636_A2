@@ -4,8 +4,9 @@
 
 This project is a **Full-Stack CRUD Application** designed to provide a streamlined platform for music enthusiasts to document and manage their personal album reviews. The primary goal is to implement a functional system with distinct User and Admin roles, ensuring data integrity, secure access, and automated deployment.
 
-To view the public link please use:http://3.25.110.212
-(note: due to technical restraints this link may change.
+To view the public link please use: http://3.25.110.212
+
+Note: due to technical restraints this link may change.
 
 Due to this fact please refer to:
 EC2 Instance ID and Name:
@@ -14,7 +15,6 @@ i-062b72b30801f74c7 // Music_Album_Review_System_Team42-2
 
 For questions regarding load balancing please use:
 ALB DNS Name: MusicAlbumALB-72304737.ap-southeast-2.elb.amazonaws.com
-)
 
 ---
 
